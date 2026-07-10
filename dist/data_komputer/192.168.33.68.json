@@ -1,0 +1,82 @@
+{
+    "User Session (Whoami)": {
+        "Username": "USER",
+        "Hostname": "DESKTOP-HG8K63M",
+        "Full Identity": "DESKTOP-HG8K63M\\USER"
+    },
+    "Sistem Operasi": "Windows 10 (64bit)",
+    "CPU": {
+        "Name": "Pentium(R) CPU G3240",
+        "Code Name": "Unknown",
+        "Package": "Unknown",
+        "Specification": "Intel(R) Pentium(R) CPU G3240 @ 3.10GHz",
+        "Core Speed": "3100.0 MHz",
+        "Cores": 2,
+        "Threads": 2
+    },
+    "Mainboard": {
+        "Motherboard Manufacturer": "Wearnes",
+        "Model": "8810L-A1",
+        "Version": "1.0",
+        "BIOS Vendor": "American Megatrends Inc.",
+        "BIOS Version": "V1.8",
+        "BIOS Date": "12/30/2014"
+    },
+    "Memory & SPD": {
+        "General": {
+            "Type": "DDR3",
+            "Total Size": "3.44 GB",
+            "Channel #": "Single",
+            "DRAM Frequency": "1333 MHz"
+        },
+        "SPD (Detail per Slot)": [
+            {
+                "Slot/Keping": "Slot #1",
+                "Ukuran (Size)": "4 GB",
+                "Merk/Manufaktur": "1352",
+                "Part Number": "SUPERTALENT02",
+                "Max Bandwidth/Speed": "1333 MHz"
+            }
+        ]
+    },
+    "Graphics": [
+        {
+            "Name/Model": "Intel(R) HD Graphics",
+            "Dedicated VRAM": "1024 MB",
+            "Driver Version": "20.19.15.4531"
+        }
+    ],
+    "Penyimpanan": [
+        {
+            "Model/Nama Drive": "ST500DM002-1ER14C",
+            "Tipe Interfasi": "HDD Mechanical Drive",
+            "Koneksi Bus": "SATA",
+            "Kapasitas": "465.76 GB",
+            "Estimasi Batas Speed": "Up to 100 - 150 MB/s"
+        }
+    ],
+    "LAN/Network Card": [
+        {
+            "Description (Nama Perangkat)": "DGE-560T Gigabit PCI Express Ethernet Adapter",
+            "Merk/Manufaktur": "D-Link",
+            "Kategori Perangkat": "LAN / Ethernet Card (Kabel)",
+            "Status Hardware": "Connected (Terhubung)",
+            "Physical Address (MAC)": "C4:12:F5:30:DA:D0",
+            "IPv4 Address": "192.168.33.68",
+            "Subnet Mask": "255.255.255.0",
+            "Default Gateway": "192.168.33.254",
+            "DNS Servers": "Unknown"
+        },
+        {
+            "Description (Nama Perangkat)": "Realtek PCIe GbE Family Controller",
+            "Merk/Manufaktur": "Unknown",
+            "Kategori Perangkat": "LAN / Ethernet Card (Kabel)",
+            "Status Hardware": "Connected (Terhubung)",
+            "Physical Address (MAC)": "4C:CC:6A:06:33:20",
+            "IPv4 Address": "172.31.31.68",
+            "Subnet Mask": "255.255.0.0",
+            "Default Gateway": "Unknown",
+            "DNS Servers": "Unknown"
+        }
+    ]
+}

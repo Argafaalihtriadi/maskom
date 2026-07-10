@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+
+<html class="light" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ProTech Infrastructure | Inventaris Komputer</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;family=Geist:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-primary": "#c0c1ff",
+                    "on-background": "#191c1e",
+                    "on-error-container": "#93000a",
+                    "surface": "#f7f9fb",
+                    "secondary-container": "#dae2fd",
+                    "secondary-fixed": "#dae2fd",
+                    "secondary-fixed-dim": "#bec6e0",
+                    "surface-tint": "#494bd6",
+                    "on-secondary-container": "#5c647a",
+                    "tertiary-fixed": "#ffdcc5",
+                    "surface-container-low": "#f2f4f6",
+                    "error-container": "#ffdad6",
+                    "primary-fixed-dim": "#c0c1ff",
+                    "tertiary": "#904900",
+                    "tertiary-fixed-dim": "#ffb783",
+                    "on-tertiary-container": "#fffbff",
+                    "surface-container-high": "#e6e8ea",
+                    "on-primary-fixed": "#07006c",
+                    "primary-container": "#6063ee",
+                    "surface-container": "#eceef0",
+                    "on-secondary-fixed-variant": "#3f465c",
+                    "on-tertiary-fixed-variant": "#703700",
+                    "on-tertiary-fixed": "#301400",
+                    "background": "#f7f9fb",
+                    "secondary": "#565e74",
+                    "on-surface": "#191c1e",
+                    "surface-bright": "#f7f9fb",
+                    "on-tertiary": "#ffffff",
+                    "surface-variant": "#e0e3e5",
+                    "on-error": "#ffffff",
+                    "primary": "#4648d4",
+                    "surface-container-highest": "#e0e3e5",
+                    "inverse-on-surface": "#eff1f3",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-container": "#b55d00",
+                    "on-secondary-fixed": "#131b2e",
+                    "on-surface-variant": "#464554",
+                    "primary-fixed": "#e1e0ff",
+                    "inverse-surface": "#2d3133",
+                    "error": "#ba1a1a",
+                    "on-primary-container": "#fffbff",
+                    "on-primary": "#ffffff",
+                    "on-secondary": "#ffffff",
+                    "outline": "#767586",
+                    "outline-variant": "#c7c4d7",
+                    "on-primary-fixed-variant": "#2f2ebe",
+                    "surface-dim": "#d8dadc"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "sm": "8px",
+                    "gutter": "24px",
+                    "lg": "24px",
+                    "margin-mobile": "16px",
+                    "base": "4px",
+                    "margin-desktop": "40px",
+                    "md": "16px",
+                    "xl": "32px",
+                    "sidebar-width": "260px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Hanken Grotesk"],
+                    "label-md": ["Geist"],
+                    "body-md": ["Inter"],
+                    "headline-lg-mobile": ["Hanken Grotesk"],
+                    "body-lg": ["Inter"],
+                    "headline-md": ["Hanken Grotesk"],
+                    "label-sm": ["Geist"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { background-color: #f7f9fb; color: #191c1e; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #c7c4d7; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #767586; }
+    </style>
+</head>
+<body class="font-body-md text-body-md overflow-hidden antialiased">
+<!-- Side Navigation -->
+<aside class="fixed left-0 top-0 h-full w-[260px] bg-surface-container-lowest border-r border-outline-variant flex flex-col py-lg gap-sm z-50">
+<div class="px-6 mb-8">
+<h1 class="text-headline-md font-bold text-primary">ProTech Infrastructure</h1>
+<p class="text-label-sm text-on-surface-variant">Administrator Sistem</p>
+</div>
+<nav class="flex-1 flex flex-col gap-1 px-3">
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-lg transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-primary font-semibold bg-primary-fixed/20 border-r-4 border-primary rounded-l-lg transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-label-md">Inventaris</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-lg transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">settings_remote</span>
+<span class="font-label-md">Daya Jarak Jauh</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-lg transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">hub</span>
+<span class="font-label-md">Peta Jaringan</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-lg transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md">Pengaturan</span>
+</a>
+</nav>
+<div class="mt-auto px-3 flex flex-col gap-1">
+<button class="mb-4 mx-3 bg-primary text-on-primary py-2.5 px-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-primary/90 active:scale-[0.98] transition-all shadow-sm">
+<span class="material-symbols-outlined text-sm">add</span>
+                Aset Baru
+            </button>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-lg transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-label-md">Bantuan</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-lg transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-md">Keluar</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-[260px] h-screen flex flex-col">
+<!-- Top Navigation -->
+<header class="h-16 flex justify-between items-center px-lg bg-surface-container-lowest border-b border-outline-variant sticky top-0 z-40">
+<div class="flex items-center gap-8">
+<div class="relative focus-within:ring-2 focus-within:ring-primary/20 rounded-xl">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+<input class="bg-surface-container-low border border-outline-variant rounded-xl pl-10 pr-4 py-2 w-80 text-sm focus:ring-1 focus:ring-primary focus:border-primary text-on-surface placeholder:text-on-surface-variant/50 transition-all" placeholder="Cari aset (misal: Hostname, IP)..." type="text"/>
+</div>
+<nav class="flex gap-6">
+<a class="text-primary border-b-2 border-primary pb-1 font-label-md" href="#">Status Global</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-label-md" href="#">Insiden</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="bg-primary-fixed text-on-primary-fixed-variant px-4 py-2 rounded-xl font-label-md hover:bg-primary-fixed-dim transition-colors">Pasang Agen</button>
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border-2 border-surface-container-lowest"></span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">terminal</span>
+</button>
+<div class="w-9 h-9 rounded-full overflow-hidden border border-outline-variant cursor-pointer hover:border-primary transition-all">
+<img alt="Admin Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4dn-i6Y8mrPeq6iIDBPd3euDiiY-6cvVNABck-_swDgfCOZ2wNZhCxQi_6dRzoo7xqnnzRIQpJhqZKkuUuOPeoRA79MVWcTmoh9M1WmW5gZjT4FkIynV4_kH4YDMHw8wp_bXQZ8QewCmABaYUGRJnA3R7mxDYwPL84oTr7s92kPR7kqvEP8dyGsvfZ8lRE57zaeh_zqX5ravSKEB3bBe2YZUFI03inopy0qcvAL6aahv6QGDxNXg"/>
+</div>
+</div>
+</header>
+<!-- Viewport Content -->
+<div class="flex-1 overflow-y-auto custom-scrollbar bg-surface p-lg">
+<!-- Page Header -->
+<div class="flex justify-between items-end mb-8">
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Inventaris Komputer</h2>
+<p class="text-on-surface-variant font-body-md mt-1">Kelola dan pantau semua aset perangkat keras di seluruh organisasi.</p>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-xl text-on-surface hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-base">filter_list</span>
+<span class="font-label-md">Filter Lanjutan</span>
+</button>
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-xl text-on-surface hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-base">download</span>
+<span class="font-label-md">Ekspor CSV</span>
+</button>
+</div>
+</div>
+<!-- Filters Bar -->
+<div class="grid grid-cols-4 gap-4 mb-8 bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-sm">
+<div>
+<label class="block text-label-sm text-on-surface-variant mb-2">Departemen</label>
+<select class="w-full bg-surface-container-low border border-outline-variant rounded-lg text-on-surface text-sm py-2 px-3 focus:ring-1 focus:ring-primary focus:border-primary">
+<option>Semua Departemen</option>
+<option>Teknik</option>
+<option>Pemasaran</option>
+<option>Keuangan</option>
+<option>SDM</option>
+</select>
+</div>
+<div>
+<label class="block text-label-sm text-on-surface-variant mb-2">Tipe OS</label>
+<select class="w-full bg-surface-container-low border border-outline-variant rounded-lg text-on-surface text-sm py-2 px-3 focus:ring-1 focus:ring-primary focus:border-primary">
+<option>Semua Sistem Operasi</option>
+<option>Windows 11 Pro</option>
+<option>Windows 10 Enterprise</option>
+<option>macOS Sonoma</option>
+<option>Ubuntu 22.04 LTS</option>
+</select>
+</div>
+<div>
+<label class="block text-label-sm text-on-surface-variant mb-2">Status</label>
+<select class="w-full bg-surface-container-low border border-outline-variant rounded-lg text-on-surface text-sm py-2 px-3 focus:ring-1 focus:ring-primary focus:border-primary">
+<option>Semua Status</option>
+<option>Aktif</option>
+<option>Siaga</option>
+<option>Tidak Aktif</option>
+</select>
+</div>
+<div class="flex items-end">
+<button class="w-full py-2 bg-surface-container-high text-on-surface-variant border border-outline-variant rounded-lg font-label-md hover:bg-outline-variant transition-all">Bersihkan Filter</button>
+</div>
+</div>
+<!-- Inventory High-Density Table -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden shadow-sm">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant">
+<th class="px-6 py-4 font-label-md text-on-surface-variant uppercase tracking-wider text-xs">Nama Perangkat</th>
+<th class="px-6 py-4 font-label-md text-on-surface-variant uppercase tracking-wider text-xs">Alamat IP</th>
+<th class="px-6 py-4 font-label-md text-on-surface-variant uppercase tracking-wider text-xs">OS</th>
+<th class="px-6 py-4 font-label-md text-on-surface-variant uppercase tracking-wider text-xs">CPU / Grafis</th>
+<th class="px-6 py-4 font-label-md text-on-surface-variant uppercase tracking-wider text-xs">RAM</th>
+<th class="px-6 py-4 font-label-md text-on-surface-variant uppercase tracking-wider text-xs">Penyimpanan</th>
+<th class="px-6 py-4 font-label-md text-on-surface-variant uppercase tracking-wider text-xs text-center">Status</th>
+<th class="px-6 py-4 font-label-md text-on-surface-variant uppercase tracking-wider text-xs text-right">Aksi</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-low transition-colors group cursor-pointer">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">desktop_windows</span>
+<div>
+<div class="text-on-surface font-bold text-sm">WS-ENG-042</div>
+<div class="text-xs text-on-surface-variant">SN: PT-8823-XJ</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 font-mono text-xs text-primary font-semibold">10.0.4.122</td>
+<td class="px-6 py-4 text-on-surface text-sm">Windows 11 Pro</td>
+<td class="px-6 py-4">
+<div class="text-on-surface text-sm font-medium">Pentium Gold G7400</div>
+<div class="text-xs text-on-surface-variant">Intel UHD 710</div>
+</td>
+<td class="px-6 py-4">
+<div class="text-on-surface text-sm">16GB DDR4</div>
+<div class="w-16 h-1 bg-surface-container-high rounded-full mt-1 overflow-hidden">
+<div class="h-full bg-primary" style="width: 42%;"></div>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="text-on-surface text-sm">ADATA LEGEND 850</div>
+<div class="text-xs text-on-surface-variant">512GB NVMe SSD</div>
+</td>
+<td class="px-6 py-4 text-center">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>
+                                        Aktif
+                                    </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="p-1 hover:bg-surface-container-high rounded transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-low transition-colors group cursor-pointer">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">laptop_mac</span>
+<div>
+<div class="text-on-surface font-bold text-sm">MBP-MKT-015</div>
+<div class="text-xs text-on-surface-variant">SN: Apple-A2485</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 font-mono text-xs text-primary font-semibold">10.0.2.89</td>
+<td class="px-6 py-4 text-on-surface text-sm">macOS Sonoma</td>
+<td class="px-6 py-4">
+<div class="text-on-surface text-sm font-medium">Apple M2 Pro</div>
+<div class="text-xs text-on-surface-variant">19-Core GPU</div>
+</td>
+<td class="px-6 py-4">
+<div class="text-on-surface text-sm">32GB LPDDR5</div>
+<div class="w-16 h-1 bg-surface-container-high rounded-full mt-1 overflow-hidden">
+<div class="h-full bg-amber-400" style="width: 78%;"></div>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="text-on-surface text-sm">Apple SSD</div>
+<div class="text-xs text-on-surface-variant">1TB Flash</div>
+</td>
+<td class="px-6 py-4 text-center">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>
+                                        Aktif
+                                    </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="p-1 hover:bg-surface-container-high rounded transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low transition-colors group cursor-pointer">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant">settings_input_component</span>
+<div>
+<div class="text-on-surface font-bold text-sm">SRV-DB-PROD</div>
+<div class="text-xs text-on-surface-variant">SN: DELL-R740-01</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 font-mono text-xs text-primary font-semibold">10.0.1.10</td>
+<td class="px-6 py-4 text-on-surface text-sm">Ubuntu 22.04 LTS</td>
+<td class="px-6 py-4">
+<div class="text-on-surface text-sm font-medium">Intel Xeon Gold</div>
+<div class="text-xs text-on-surface-variant">Matrox G200</div>
+</td>
+<td class="px-6 py-4">
+<div class="text-on-surface text-sm">128GB ECC</div>
+<div class="w-16 h-1 bg-surface-container-high rounded-full mt-1 overflow-hidden">
+<div class="h-full bg-emerald-500" style="width: 25%;"></div>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="text-on-surface text-sm">SAMSUNG PM1643</div>
+<div class="text-xs text-on-surface-variant">3.84TB SAS SSD</div>
+</td>
+<td class="px-6 py-4 text-center">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+<span class="w-1.5 h-1.5 rounded-full bg-rose-500 mr-1.5"></span>
+                                        Tidak Aktif
+                                    </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="p-1 hover:bg-surface-container-high rounded transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-low transition-colors group cursor-pointer">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">desktop_windows</span>
+<div>
+<div class="text-on-surface font-bold text-sm">WS-FIN-012</div>
+<div class="text-xs text-on-surface-variant">SN: HP-ELITE-332</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 font-mono text-xs text-primary font-semibold">10.0.3.54</td>
+<td class="px-6 py-4 text-on-surface text-sm">Windows 10 Ent</td>
+<td class="px-6 py-4">
+<div class="text-on-surface text-sm font-medium">Intel Core i5-12400</div>
+<div class="text-xs text-on-surface-variant">Intel Iris Xe</div>
+</td>
+<td class="px-6 py-4">
+<div class="text-on-surface text-sm">16GB DDR4</div>
+<div class="w-16 h-1 bg-surface-container-high rounded-full mt-1 overflow-hidden">
+<div class="h-full bg-amber-500" style="width: 82%;"></div>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="text-on-surface text-sm">WD Blue SN570</div>
+<div class="text-xs text-on-surface-variant">256GB NVMe SSD</div>
+</td>
+<td class="px-6 py-4 text-center">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5"></span>
+                                        Siaga
+                                    </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="p-1 hover:bg-surface-container-high rounded transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="px-6 py-4 flex items-center justify-between bg-surface-container-low border-t border-outline-variant">
+<div class="text-sm text-on-surface-variant">
+                        Menampilkan <span class="font-bold text-on-surface">1</span> sampai <span class="font-bold text-on-surface">4</span> dari <span class="font-bold text-on-surface">1.240</span> aset
+                    </div>
+<div class="flex gap-1">
+<button class="px-3 py-1 border border-outline-variant rounded-lg hover:bg-surface-container-high transition-colors opacity-50 cursor-not-allowed text-sm">Sebelumnya</button>
+<button class="px-3 py-1 bg-primary text-on-primary rounded-lg font-bold text-sm">1</button>
+<button class="px-3 py-1 border border-outline-variant rounded-lg hover:bg-surface-container-high transition-colors text-sm">2</button>
+<button class="px-3 py-1 border border-outline-variant rounded-lg hover:bg-surface-container-high transition-colors text-sm">3</button>
+<span class="px-2 py-1 text-on-surface-variant">...</span>
+<button class="px-3 py-1 border border-outline-variant rounded-lg hover:bg-surface-container-high transition-colors text-sm">124</button>
+<button class="px-3 py-1 border border-outline-variant rounded-lg hover:bg-surface-container-high transition-colors text-sm">Berikutnya</button>
+</div>
+</div>
+</div>
+<!-- Dashboard Analytics Bottom Section -->
+<div class="grid grid-cols-12 gap-6 mt-8">
+<div class="col-span-8 bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm">
+<h3 class="font-label-md text-on-surface-variant mb-6 uppercase tracking-wider text-xs font-bold">Ringkasan Kesehatan Infrastruktur</h3>
+<div class="flex items-center gap-8 h-48">
+<div class="w-1/3 flex flex-col items-center justify-center border-r border-outline-variant">
+<div class="relative w-32 h-32 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-surface-container-low" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor" stroke-width="8"></circle>
+<circle class="text-primary" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor" stroke-dasharray="364.4" stroke-dashoffset="29.15" stroke-linecap="round" stroke-width="8"></circle>
+</svg>
+<div class="absolute flex flex-col items-center">
+<span class="text-2xl font-bold text-on-surface">92%</span>
+<span class="text-[10px] uppercase text-on-surface-variant font-bold">Uptime</span>
+</div>
+</div>
+</div>
+<div class="flex-1 grid grid-cols-2 gap-x-8 gap-y-6">
+<div class="space-y-2">
+<div class="flex justify-between items-center text-xs">
+<span class="text-on-surface-variant font-medium">Beban CPU Rata-rata</span>
+<span class="text-primary font-bold">34%</span>
+</div>
+<div class="w-full h-2 bg-surface-container-low rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 34%"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between items-center text-xs">
+<span class="text-on-surface-variant font-medium">Saturasi Jaringan</span>
+<span class="text-amber-500 font-bold">68%</span>
+</div>
+<div class="w-full h-2 bg-surface-container-low rounded-full overflow-hidden">
+<div class="h-full bg-amber-500" style="width: 68%"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between items-center text-xs">
+<span class="text-on-surface-variant font-medium">Ketersediaan Penyimpanan</span>
+<span class="text-emerald-500 font-bold">452 TB</span>
+</div>
+<div class="w-full h-2 bg-surface-container-low rounded-full overflow-hidden">
+<div class="h-full bg-emerald-500" style="width: 75%"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between items-center text-xs">
+<span class="text-on-surface-variant font-medium">Ancaman Keamanan Aktif</span>
+<span class="text-rose-500 font-bold">0</span>
+</div>
+<div class="w-full h-2 bg-surface-container-low rounded-full overflow-hidden">
+<div class="h-full bg-rose-500" style="width: 0%"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="col-span-4 bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm">
+<h3 class="font-label-md text-on-surface-variant mb-6 uppercase tracking-wider text-xs font-bold">Aksi Cepat</h3>
+<div class="grid grid-cols-2 gap-4">
+<button class="flex flex-col items-center justify-center gap-2 p-4 bg-surface-container-low border border-outline-variant rounded-xl hover:bg-primary/5 hover:border-primary/30 transition-all group">
+<span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">restart_alt</span>
+<span class="text-xs font-bold text-on-surface">Reboot Massal</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-2 p-4 bg-surface-container-low border border-outline-variant rounded-xl hover:bg-primary/5 hover:border-primary/30 transition-all group">
+<span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">system_update</span>
+<span class="text-xs font-bold text-on-surface">Patch Semua</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-2 p-4 bg-surface-container-low border border-outline-variant rounded-xl hover:bg-primary/5 hover:border-primary/30 transition-all group">
+<span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">inventory</span>
+<span class="text-xs font-bold text-on-surface">Audit Scan</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-2 p-4 bg-surface-container-low border border-outline-variant rounded-xl hover:bg-primary/5 hover:border-primary/30 transition-all group">
+<span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">share_location</span>
+<span class="text-xs font-bold text-on-surface">Lokasi Perangkat</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<script>
+        // Simple search focus micro-interaction
+        const searchInput = document.querySelector('input[type="text"]');
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.classList.add('ring-2', 'ring-primary/20');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.parentElement.classList.remove('ring-2', 'ring-primary/20');
+        });
+
+        // Row click feedback
+        document.querySelectorAll('tbody tr').forEach(row => {
+            row.addEventListener('click', () => {
+                console.log('Aset dipilih');
+            });
+        });
+    </script>
+</body></html>

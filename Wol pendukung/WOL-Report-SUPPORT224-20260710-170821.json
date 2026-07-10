@@ -1,0 +1,30 @@
+﻿{
+    "Hostname":  "SUPPORT224",
+    "Timestamp":  "2026-07-10 17:08:15",
+    "Mode":  "AuditAndFix",
+    "Adapters":  [
+                     {
+                         "Name":  "AT \u0026 HH",
+                         "Description":  "DGE-560T Gigabit PCI Express Ethernet Adapter",
+                         "Status":  "Up",
+                         "WakeOnMagicPacket":  2,
+                         "DeviceWakeEnabled":  true,
+                         "EnergyEfficientEth":  "Enabled",
+                         "Actions":  [
+                                         "Green Ethernet dinonaktifkan"
+                                     ]
+                     },
+                     {
+                         "Name":  "32",
+                         "Description":  "Intel(R) Ethernet Connection (17) I219-V",
+                         "Status":  "Up",
+                         "WakeOnMagicPacket":  2,
+                         "DeviceWakeEnabled":  true,
+                         "EnergyEfficientEth":  "On",
+                         "Actions":  [
+
+                                     ]
+                     }
+                 ],
+    "FastStartup":  "Enabled (dimatikan sekarang)"
+}

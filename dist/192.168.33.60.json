@@ -1,0 +1,71 @@
+{
+    "User Session (Whoami)": {
+        "Username": "SUPPORT.S BGR 1",
+        "Hostname": "DESKTOP-RN2JOLL",
+        "Full Identity": "DESKTOP-RN2JOLL\\SUPPORT.S BGR 1"
+    },
+    "Sistem Operasi": "Windows 11 (64bit)",
+    "CPU": {
+        "Name": "12th Gen Core(TM) i3-12100",
+        "Code Name": "Unknown",
+        "Package": "Socket 1700 LGA",
+        "Specification": "12th Gen Intel(R) Core(TM) i3-12100",
+        "Core Speed": "3300.0 MHz",
+        "Cores": 4,
+        "Threads": 8
+    },
+    "Mainboard": {
+        "Motherboard Manufacturer": "PT Zyrexindo Mandiri Buana Tbk",
+        "Model": "Default String (System Model: Zyrex Tactical)",
+        "Version": "Default string",
+        "BIOS Vendor": "American Megatrends International, LLC.",
+        "BIOS Version": "H610M7A017",
+        "BIOS Date": "10/03/2024"
+    },
+    "Memory & SPD": {
+        "General": {
+            "Type": "DDR4",
+            "Total Size": "3.78 GB",
+            "Channel #": "Single",
+            "DRAM Frequency": "2667 MHz"
+        },
+        "SPD (Detail per Slot)": [
+            {
+                "Slot/Keping": "Slot #1",
+                "Ukuran (Size)": "4 GB",
+                "Merk/Manufaktur": "Netac Technology Co Ltd",
+                "Part Number": "",
+                "Max Bandwidth/Speed": "2667 MHz"
+            }
+        ]
+    },
+    "Graphics": [
+        {
+            "Name/Model": "Intel(R) UHD Graphics 730",
+            "Dedicated VRAM": "1935 MB",
+            "Driver Version": "32.0.101.7085"
+        }
+    ],
+    "Penyimpanan": [
+        {
+            "Model/Nama Drive": "HS-SSD-FUTURE 512G",
+            "Tipe Interfasi": "SSD NVMe (PCIe High Speed)",
+            "Koneksi Bus": "NVMe",
+            "Kapasitas": "476.94 GB",
+            "Estimasi Batas Speed": "Up to 3500 - 7500 MB/s"
+        }
+    ],
+    "LAN/Network Card": [
+        {
+            "Description (Nama Perangkat)": "Intel(R) Ethernet Connection (17) I219-V",
+            "Merk/Manufaktur": "Intel",
+            "Kategori Perangkat": "LAN / Ethernet Card (Kabel)",
+            "Status Hardware": "Connected (Terhubung)",
+            "Physical Address (MAC)": "84:47:09:74:62:78",
+            "IPv4 Address": "192.168.33.60",
+            "Subnet Mask": "255.255.255.0",
+            "Default Gateway": "192.168.33.254",
+            "DNS Servers": "192.168.132.215, 192.168.32.155"
+        }
+    ]
+}

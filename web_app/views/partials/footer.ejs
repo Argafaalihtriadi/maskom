@@ -1,0 +1,14 @@
+</main>
+<script>
+    // Micro-interactions: Subtle cursor interaction
+    document.addEventListener('mousemove', e => {
+        const glow = document.getElementById('cursor-glow');
+        if (glow) {
+            glow.style.setProperty('--x', e.clientX + 'px');
+            glow.style.setProperty('--y', e.clientY + 'px');
+            glow.style.opacity = '1';
+        }
+    });
+</script>
+</body>
+</html>

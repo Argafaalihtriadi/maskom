@@ -1,0 +1,227 @@
+<%- include('partials/header', { title: 'Dasbor', activePage: 'dashboard' }) %>
+
+<!-- Dasbor Header -->
+<div class="flex items-end justify-between mb-8">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Dasbor Utama</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Status real-time aset ProTech Infrastructure.</p>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 px-4 py-2 border border-outline-variant rounded-xl text-on-surface font-label-md text-label-md hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined" data-icon="file_download">file_download</span>
+                Ekspor PDF
+            </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-xl font-label-md text-label-md hover:opacity-90 transition-opacity shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined" data-icon="publish">publish</span>
+                Terapkan Agen
+            </button>
+</div>
+</div>
+<!-- KPI Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter mb-8">
+<!-- Total Aset -->
+<div class="bg-surface-container-lowest border border-outline-variant p-5 rounded-xl shadow-sm">
+<div class="flex items-start justify-between">
+<div>
+<p class="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">Total Aset</p>
+<h3 class="text-headline-lg font-headline-lg mt-1"><%= typeof totalDevices !== 'undefined' ? totalDevices : 0 %></h3>
+</div>
+<div class="p-2 bg-primary/10 rounded-xl text-primary">
+<span class="material-symbols-outlined" data-icon="inventory">inventory</span>
+</div>
+</div>
+<div class="mt-4 flex items-center gap-2 text-status-success">
+<span class="material-symbols-outlined text-sm" data-icon="trending_up">trending_up</span>
+<span class="font-mono-data text-mono-data text-xs">+12 bulan ini</span>
+</div>
+</div>
+<!-- Perangkat Aktif -->
+<div class="bg-surface-container-lowest border border-outline-variant p-5 rounded-xl shadow-sm">
+<div class="flex items-start justify-between">
+<div>
+<p class="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">Perangkat Aktif</p>
+<h3 class="text-headline-lg font-headline-lg mt-1"><%= typeof totalDevices !== 'undefined' ? totalDevices : 0 %></h3>
+</div>
+<div class="p-2 bg-status-success/10 rounded-xl text-status-success">
+<span class="material-symbols-outlined" data-icon="cloud_done">cloud_done</span>
+</div>
+</div>
+<div class="mt-4 flex items-center gap-2">
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-status-success h-full" style="width: 100%"></div>
+</div>
+<span class="font-mono-data text-mono-data text-xs text-on-surface-variant">100%</span>
+</div>
+</div>
+<!-- Perangkat Tidak Aktif -->
+<div class="bg-surface-container-lowest border border-outline-variant p-5 rounded-xl shadow-sm">
+<div class="flex items-start justify-between">
+<div>
+<p class="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">Perangkat Tidak Aktif</p>
+<h3 class="text-headline-lg font-headline-lg mt-1">0</h3>
+</div>
+<div class="p-2 bg-status-error/10 rounded-xl text-status-error">
+<span class="material-symbols-outlined" data-icon="cloud_off">cloud_off</span>
+</div>
+</div>
+<div class="mt-4 flex items-center gap-2 text-status-warning">
+<span class="material-symbols-outlined text-sm" data-icon="report">report</span>
+<span class="font-mono-data text-mono-data text-xs">0 Peringatan Kritis</span>
+</div>
+</div>
+<!-- Kesehatan Jaringan -->
+<div class="bg-surface-container-lowest border border-outline-variant p-5 rounded-xl shadow-sm">
+<div class="flex items-start justify-between">
+<div>
+<p class="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">Kesehatan Jaringan</p>
+<h3 class="text-headline-lg font-headline-lg mt-1">Optimal</h3>
+</div>
+<div class="p-2 bg-primary/10 rounded-xl text-primary">
+<span class="material-symbols-outlined" data-icon="speed">speed</span>
+</div>
+</div>
+<div class="mt-4 flex items-center gap-2">
+<div class="flex -space-x-1">
+<div class="w-1.5 h-4 bg-status-success rounded-full"></div>
+<div class="w-1.5 h-4 ml-1 bg-status-success rounded-full"></div>
+<div class="w-1.5 h-4 ml-1 bg-status-success rounded-full"></div>
+<div class="w-1.5 h-4 ml-1 bg-status-success rounded-full"></div>
+<div class="w-1.5 h-4 ml-1 bg-surface-container rounded-full"></div>
+</div>
+<span class="font-mono-data text-mono-data text-xs text-on-surface-variant">Latensi: 14ms</span>
+</div>
+</div>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-12 gap-gutter">
+<!-- Topologi Infrastruktur -->
+<div class="col-span-12 lg:col-span-8 bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden flex flex-col h-[500px] shadow-sm">
+<div class="p-5 border-b border-outline-variant flex items-center justify-between bg-surface-container-low">
+<h4 class="font-headline-sm text-headline-sm">Topologi Infrastruktur</h4>
+<div class="flex gap-2">
+<span class="px-2 py-1 bg-surface-container-high rounded text-[10px] font-mono-data uppercase border border-outline-variant">Live View</span>
+<button class="p-1 hover:text-primary transition-colors"><span class="material-symbols-outlined" data-icon="fullscreen">fullscreen</span></button>
+</div>
+</div>
+<div class="flex-1 relative bg-slate-50">
+<div class="absolute inset-0 p-8 flex flex-wrap gap-12 items-center justify-center pointer-events-none">
+<div class="w-16 h-16 rounded-full border-2 border-primary/40 bg-white shadow-lg flex items-center justify-center animate-pulse pointer-events-auto cursor-pointer hover:border-primary">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="dns">dns</span>
+</div>
+<div class="w-12 h-12 rounded-full border border-outline-variant bg-white shadow-sm flex items-center justify-center pointer-events-auto cursor-pointer hover:bg-surface-container">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="router">router</span>
+</div>
+<div class="w-12 h-12 rounded-full border border-outline-variant bg-white shadow-sm flex items-center justify-center pointer-events-auto cursor-pointer hover:bg-surface-container">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="laptop_mac">laptop_mac</span>
+</div>
+</div>
+<div class="absolute bottom-4 left-4 p-4 glass-panel rounded-xl space-y-2 max-w-xs shadow-sm">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-status-success"></div>
+<p class="font-label-md text-label-md">Main-Cluster-01 <span class="text-on-surface-variant ml-2 font-mono-data">AKTIF</span></p>
+</div>
+</div>
+</div>
+</div>
+<!-- Feed Aktivitas -->
+<div class="col-span-12 lg:col-span-4 bg-surface-container-lowest border border-outline-variant rounded-xl flex flex-col h-[500px] shadow-sm">
+<div class="p-5 border-b border-outline-variant flex items-center justify-between">
+<h4 class="font-headline-sm text-headline-sm">Feed Aktivitas</h4>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="history">history</span>
+</div>
+<div class="flex-1 overflow-y-auto p-2 space-y-2">
+<div class="p-3 hover:bg-surface-container transition-colors rounded-xl border border-transparent hover:border-outline-variant group">
+<div class="flex gap-4">
+<div class="mt-1 w-2 h-2 rounded-full bg-status-success shadow-[0_0_8px_rgba(34,197,94,0.3)]"></div>
+<div class="flex-1">
+<p class="font-body-md text-body-md text-on-surface">Deteksi perangkat baru <span class="font-mono-data text-primary">192.168.32.224</span></p>
+<p class="text-on-surface-variant text-[11px] font-mono-data mt-0.5">BARU SAJA • AGEN PENEMUAN</p>
+</div>
+</div>
+</div>
+</div>
+<button class="m-4 py-2 border border-outline-variant rounded-xl text-on-surface-variant font-label-md text-label-md hover:bg-surface-container hover:text-on-surface transition-all">
+                Lihat Log Audit Lengkap
+            </button>
+</div>
+<!-- Infrastruktur Tersemat -->
+<div class="col-span-12 mt-4">
+<h4 class="font-headline-sm text-headline-sm mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="star">star</span>
+                Infrastruktur Tersemat
+            </h4>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
+<% if(typeof devices !== 'undefined' && devices.length > 0) { %>
+    <% devices.slice(0, 4).forEach(function(device) { 
+        const userInfo = device.data["User Session (Whoami)"];
+        const osInfo = device.data["Sistem Operasi"];
+    %>
+    <!-- Computer Card -->
+    <div class="bg-surface-container-lowest border border-outline-variant p-5 rounded-xl hover:border-primary/50 transition-all group shadow-sm">
+    <div class="flex justify-between items-start mb-4">
+    <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+    <span class="material-symbols-outlined" data-icon="desktop_windows">desktop_windows</span>
+    </div>
+    <div class="flex items-center gap-1.5 px-2 py-1 bg-status-success/10 rounded-lg border border-status-success/20">
+    <div class="w-1.5 h-1.5 rounded-full bg-status-success"></div>
+    <span class="text-[10px] font-bold text-status-success uppercase">Online</span>
+    </div>
+    </div>
+    <h5 class="font-headline-sm text-headline-sm mb-1"><%= userInfo ? userInfo.Hostname : 'Unknown' %></h5>
+    <p class="font-mono-data text-mono-data text-on-surface-variant mb-4" title="<%= osInfo %>">OS: <%= osInfo ? osInfo.substring(0, 15) + '...' : 'Unknown' %></p>
+    <div class="space-y-3 pt-4 border-t border-outline-variant">
+    <div class="flex justify-between text-xs">
+    <span class="text-on-surface-variant">Beban CPU</span>
+    <span class="font-mono-data text-on-surface">N/A</span>
+    </div>
+    <div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+    <div class="bg-primary h-full" style="width: 0%"></div>
+    </div>
+    </div>
+    <div class="mt-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+    <a href="/asset/<%= device.filename %>" class="flex-1 py-2 bg-surface-container hover:bg-primary/10 text-primary text-[11px] font-bold rounded-lg uppercase transition-colors text-center block">Detail</a>
+    </div>
+    </div>
+    <% }); %>
+<% } else { %>
+    <div class="col-span-12 text-center py-8 text-on-surface-variant">
+        Tidak ada perangkat terdeteksi. Pastikan file JSON hasil scan berada di folder data_komputer.
+    </div>
+<% } %>
+</div>
+</div>
+</div>
+
+<script>
+    // Real-time update simulator for the feed (Indonesian)
+    const activityFeed = document.querySelector('.overflow-y-auto');
+    const items = [
+        { text: 'Sistem web aplikasi berhasil dimulai', meta: 'SISTEM • BARU SAJA', status: 'primary' },
+        { text: 'Memuat data inventaris PC dari lokal', meta: 'DATA • 1M LALU', status: 'status-success' }
+    ];
+
+    let index = 0;
+    setInterval(() => {
+        if(!activityFeed) return;
+        const item = items[index];
+        const div = document.createElement('div');
+        div.className = 'p-3 hover:bg-surface-container transition-colors rounded-xl border border-transparent hover:border-outline-variant animate-pulse';
+        div.innerHTML = `
+            <div class="flex gap-4">
+                <div class="mt-1 w-2 h-2 rounded-full bg-${item.status}"></div>
+                <div class="flex-1">
+                    <p class="font-body-md text-body-md text-on-surface">${item.text}</p>
+                    <p class="text-on-surface-variant text-[11px] font-mono-data mt-0.5">${item.meta}</p>
+                </div>
+            </div>
+        `;
+        activityFeed.prepend(div);
+        if (activityFeed.children.length > 8) {
+            activityFeed.removeChild(activityFeed.lastElementChild);
+        }
+        setTimeout(() => div.classList.remove('animate-pulse'), 1000);
+        index = (index + 1) % items.length;
+    }, 15000);
+</script>
+
+<%- include('partials/footer') %>

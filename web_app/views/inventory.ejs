@@ -1,0 +1,371 @@
+<%- include('partials/header', { title: 'Inventaris', activePage: 'inventory' }) %>
+
+<!-- Viewport Content -->
+<div class="flex-1 overflow-y-auto custom-scrollbar bg-surface p-lg relative">
+<!-- Page Header -->
+<div class="flex justify-between items-end mb-8">
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Inventaris Komputer</h2>
+<p class="text-on-surface-variant font-body-md mt-1">Kelola dan pantau semua aset perangkat keras di seluruh organisasi.</p>
+</div>
+<div class="flex gap-3">
+<div class="relative focus-within:ring-2 focus-within:ring-primary/20 rounded-xl">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+<input id="searchInput" class="bg-surface-container-lowest border border-outline-variant rounded-xl pl-10 pr-4 py-2 w-64 text-sm focus:ring-1 focus:ring-primary focus:border-primary text-on-surface transition-all" placeholder="Cari perangkat..." type="text"/>
+</div>
+<button onclick="document.getElementById('csvFileInput').click()" class="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-xl text-on-surface hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-base">upload</span>
+<span class="font-label-md">Impor CSV</span>
+</button>
+<input type="file" id="csvFileInput" accept=".csv" class="hidden">
+<button onclick="exportCSV()" class="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-xl text-on-surface hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-base">download</span>
+<span class="font-label-md">Ekspor CSV</span>
+</button>
+<button onclick="openModal()" class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-xl font-label-md hover:opacity-90 transition-colors">
+<span class="material-symbols-outlined text-base">add</span>
+<span>Tambah Aset</span>
+</button>
+</div>
+</div>
+<!-- Filters Bar -->
+<div class="grid grid-cols-4 gap-4 mb-8 bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-sm">
+<div>
+<label class="block text-label-sm text-on-surface-variant mb-2">Departemen</label>
+<select class="w-full bg-surface-container-low border border-outline-variant rounded-lg text-on-surface text-sm py-2 px-3 focus:ring-1 focus:ring-primary focus:border-primary">
+<option>Semua Departemen</option>
+<option>Teknik</option>
+<option>Pemasaran</option>
+<option>Keuangan</option>
+<option>SDM</option>
+</select>
+</div>
+<div>
+<label class="block text-label-sm text-on-surface-variant mb-2">Tipe OS</label>
+<select class="w-full bg-surface-container-low border border-outline-variant rounded-lg text-on-surface text-sm py-2 px-3 focus:ring-1 focus:ring-primary focus:border-primary">
+<option>Semua Sistem Operasi</option>
+<option>Windows 11 Pro</option>
+<option>Windows 10 Enterprise</option>
+<option>macOS Sonoma</option>
+<option>Ubuntu 22.04 LTS</option>
+</select>
+</div>
+<div>
+<label class="block text-label-sm text-on-surface-variant mb-2">Status</label>
+<select class="w-full bg-surface-container-low border border-outline-variant rounded-lg text-on-surface text-sm py-2 px-3 focus:ring-1 focus:ring-primary focus:border-primary">
+<option>Semua Status</option>
+<option>Aktif</option>
+<option>Siaga</option>
+<option>Tidak Aktif</option>
+</select>
+</div>
+<div class="flex items-end">
+<button class="w-full py-2 bg-surface-container-high text-on-surface-variant border border-outline-variant rounded-lg font-label-md hover:bg-outline-variant transition-all">Bersihkan Filter</button>
+</div>
+</div>
+<!-- Inventory Table -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden shadow-sm">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse" id="inventoryTable">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant">
+<th class="px-4 py-4 font-label-md text-on-surface-variant uppercase tracking-wider text-xs">Nama Perangkat</th>
+<th class="px-4 py-4 font-label-md text-on-surface-variant uppercase tracking-wider text-xs">NO DAT</th>
+<th class="px-4 py-4 font-label-md text-on-surface-variant uppercase tracking-wider text-xs">Serial Number</th>
+<th class="px-4 py-4 font-label-md text-on-surface-variant uppercase tracking-wider text-xs">Departemen</th>
+<th class="px-4 py-4 font-label-md text-on-surface-variant uppercase tracking-wider text-xs">User</th>
+<th class="px-4 py-4 font-label-md text-on-surface-variant uppercase tracking-wider text-xs">Alamat IP</th>
+<th class="px-4 py-4 font-label-md text-on-surface-variant uppercase tracking-wider text-xs">OS</th>
+<th class="px-4 py-4 font-label-md text-on-surface-variant uppercase tracking-wider text-xs">RAM</th>
+<th class="px-4 py-4 font-label-md text-on-surface-variant uppercase tracking-wider text-xs">Penyimpanan</th>
+<th class="px-4 py-4 font-label-md text-on-surface-variant uppercase tracking-wider text-xs text-center">Status</th>
+<th class="px-4 py-4 font-label-md text-on-surface-variant uppercase tracking-wider text-xs text-right">Aksi</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant" id="inventoryBody">
+<%
+const rawDataForExport = [];
+if(typeof devices !== 'undefined' && devices.length > 0) {
+    devices.forEach(function(device) {
+        const userInfo = device.data["User Session (Whoami)"];
+        const osInfo = device.data["Sistem Operasi"];
+        const cpuInfo = device.data["CPU"] || {};
+        const memInfo = (device.data["Memory & SPD"] && device.data["Memory & SPD"]["General"]) ? device.data["Memory & SPD"]["General"] : {};
+        const datInfo = device.data["DAT"] || '-';
+        const serialInfo = device.data["Serial Number"] || '-';
+        const departemenInfo = device.data["Departemen"] || '-';
+        const penggunaInfo = device.data["Pengguna"] || (userInfo ? userInfo.Username : '-');
+
+        let ipAddress = 'Unknown';
+        let macAddress = '';
+        if (device.data["LAN/Network Card"] && device.data["LAN/Network Card"].length > 0) {
+            const connectedCard = device.data["LAN/Network Card"].find(c => c["Status Hardware"] && c["Status Hardware"].includes("Connected"));
+            if (connectedCard) {
+                ipAddress = connectedCard["IPv4 Address"];
+                macAddress = connectedCard["Physical Address (MAC)"];
+            } else {
+                ipAddress = device.data["LAN/Network Card"][0]["IPv4 Address"];
+                macAddress = device.data["LAN/Network Card"][0]["Physical Address (MAC)"];
+            }
+        }
+
+        const hostname = userInfo ? userInfo.Hostname : 'Unknown';
+        const ramSize = memInfo["Total Size"] || 'Unknown';
+        const ramType = memInfo.Type || '';
+
+        const storageList = device.data["Penyimpanan"] || [];
+        let storageText = '-';
+        if (storageList.length > 0) {
+            const mainDrive = storageList[0];
+            const capacity = mainDrive["Kapasitas"] || '';
+            const typeStr = (mainDrive["Tipe Interfasi"] || mainDrive["Tipe"] || mainDrive["Model/Nama Drive"] || '').toLowerCase();
+            let driveType = (typeStr.includes('nvme') || typeStr.includes('ssd') || typeStr.includes('flash')) ? 'SSD' : 'HDD';
+            storageText = driveType + ' ' + capacity;
+        }
+
+        rawDataForExport.push({
+            filename: device.filename,
+            hostname: hostname,
+            ip: ipAddress,
+            os: osInfo || '',
+            dat: device.data["DAT"] || '',
+            serial_number: device.data["Serial Number"] || '',
+            departemen: device.data["Departemen"] || '',
+            pengguna: device.data["Pengguna"] || ''
+        });
+%>
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-4 py-4 whitespace-nowrap" onclick="window.location='/asset/<%= device.filename %>'" style="cursor:pointer">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-base">desktop_windows</span>
+<div class="text-on-surface font-bold text-sm"><%= hostname %></div>
+</div>
+</td>
+<td class="px-4 py-4">
+<span class="px-2 py-1 bg-surface-container-high rounded text-primary font-mono text-xs"><%= datInfo %></span>
+</td>
+<td class="px-4 py-4 text-on-surface font-mono text-xs"><%= serialInfo %></td>
+<td class="px-4 py-4">
+<% if (departemenInfo !== '-') { %><span class="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs font-semibold"><%= departemenInfo %></span><% } else { %><span class="text-on-surface-variant text-xs">-</span><% } %>
+</td>
+<td class="px-4 py-4 text-on-surface text-sm font-medium"><%= penggunaInfo %></td>
+<td class="px-4 py-4 font-mono text-xs text-primary font-semibold"><%= ipAddress %></td>
+<td class="px-4 py-4 text-on-surface text-xs"><%= osInfo ? osInfo.substring(0,18) : 'Unknown' %></td>
+<td class="px-4 py-4">
+<div class="text-on-surface text-sm"><%= ramSize %> <span class="text-xs text-primary font-bold"><%= ramType %></span></div>
+</td>
+<td class="px-4 py-4 text-on-surface text-sm font-bold"><%= storageText %></td>
+<td class="px-4 py-4 text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span> Aktif
+</span>
+</td>
+<td class="px-4 py-4 text-right flex justify-end gap-1">
+<button onclick="openModal('<%= device.filename %>', '<%= hostname %>', '<%= ipAddress %>', '<%= macAddress %>', '<%= osInfo %>', '<%= device.data['DAT'] || '' %>', '<%= device.data['Serial Number'] || '' %>', '<%= device.data['Departemen'] || '' %>', '<%= device.data['Pengguna'] || '' %>')" class="p-2 hover:bg-primary/10 hover:text-primary rounded transition-colors text-on-surface-variant" title="Edit">
+<span class="material-symbols-outlined text-sm">edit</span>
+</button>
+<button onclick="deleteDevice('<%= device.filename %>')" class="p-2 hover:bg-status-error/10 hover:text-status-error rounded transition-colors text-on-surface-variant" title="Delete">
+<span class="material-symbols-outlined text-sm">delete</span>
+</button>
+<a href="/asset/<%= device.filename %>" class="p-2 hover:bg-surface-container-high rounded transition-colors text-on-surface-variant" title="Detail">
+<span class="material-symbols-outlined text-sm">visibility</span>
+</a>
+</td>
+</tr>
+<% }); } else { %>
+<tr id="empty-row"><td colspan="11" class="text-center py-8 text-on-surface-variant">Tidak ada data ditemukan</td></tr>
+<% } %>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+
+<!-- Modal -->
+<div id="deviceModal" class="fixed inset-0 bg-on-background/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center">
+<div class="bg-surface-container-lowest rounded-xl shadow-lg border border-outline-variant w-full max-w-xl overflow-hidden">
+<div class="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
+<h3 id="modalTitle" class="font-headline-sm text-headline-sm text-on-surface">Tambah Aset</h3>
+<button onclick="closeModal()" class="text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="p-6 grid grid-cols-2 gap-4">
+<input type="hidden" id="editFilename" value="">
+<div>
+<label class="block text-label-sm font-label-sm text-on-surface-variant mb-1">NO DAT</label>
+<input type="text" id="devDat" class="w-full bg-surface-container border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:outline-none focus:ring-1 focus:ring-primary font-mono" placeholder="Cth: C02.123456">
+</div>
+<div>
+<label class="block text-label-sm font-label-sm text-on-surface-variant mb-1">Serial Number</label>
+<input type="text" id="devSerial" class="w-full bg-surface-container border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:outline-none focus:ring-1 focus:ring-primary font-mono" placeholder="Cth: SN-XYZ987">
+</div>
+<div>
+<label class="block text-label-sm font-label-sm text-on-surface-variant mb-1">Departemen</label>
+<input type="text" id="devDepartemen" class="w-full bg-surface-container border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Cth: IT, Finance, HR">
+</div>
+<div>
+<label class="block text-label-sm font-label-sm text-on-surface-variant mb-1">Pengguna (User)</label>
+<input type="text" id="devPengguna" class="w-full bg-surface-container border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Cth: Budi Santoso">
+</div>
+<div class="col-span-2">
+<label class="block text-label-sm font-label-sm text-on-surface-variant mb-1">Hostname *</label>
+<input type="text" id="devHostname" class="w-full bg-surface-container border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Cth: PC-ADMIN-01">
+</div>
+<div>
+<label class="block text-label-sm font-label-sm text-on-surface-variant mb-1">Alamat IP</label>
+<input type="text" id="devIp" class="w-full bg-surface-container border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Cth: 192.168.1.5">
+</div>
+<div>
+<label class="block text-label-sm font-label-sm text-on-surface-variant mb-1">MAC Address</label>
+<input type="text" id="devMac" class="w-full bg-surface-container border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Cth: 00:1A:2B:3C:4D:5E">
+</div>
+<div class="col-span-2">
+<label class="block text-label-sm font-label-sm text-on-surface-variant mb-1">Sistem Operasi</label>
+<input type="text" id="devOs" class="w-full bg-surface-container border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Cth: Windows 10">
+</div>
+</div>
+<div class="p-4 border-t border-outline-variant bg-surface-container-low flex justify-end gap-3">
+<button onclick="closeModal()" class="px-4 py-2 text-on-surface-variant font-label-md hover:bg-surface-container transition-colors rounded-lg">Batal</button>
+<button onclick="saveDevice()" class="px-4 py-2 bg-primary text-on-primary font-label-md rounded-lg hover:opacity-90">Simpan</button>
+</div>
+</div>
+</div>
+
+<script>
+const exportData = <%- JSON.stringify(rawDataForExport) %>;
+
+function exportCSV() {
+    if(exportData.length === 0) return alert('Tidak ada data untuk diekspor.');
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Filename,Hostname,IP Address,OS,NO DAT,Serial Number,Departemen,Pengguna\n";
+    exportData.forEach(function(row) {
+        var osSafe = '"' + (row.os || '').replace(/"/g, '""') + '"';
+        csvContent += row.filename + ',' + row.hostname + ',' + row.ip + ',' + osSafe + ',' + row.dat + ',' + row.serial_number + ',' + row.departemen + ',' + row.pengguna + "\n";
+    });
+    var encodedUri = encodeURI(csvContent);
+    var link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "inventaris_aset.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+document.getElementById('csvFileInput').addEventListener('change', function(e) {
+    var file = e.target.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(evt) { processCSV(evt.target.result); };
+    reader.readAsText(file);
+    e.target.value = '';
+});
+
+function processCSV(csvText) {
+    var lines = csvText.split('\n');
+    if(lines.length < 2) return alert('File CSV kosong atau tidak valid.');
+    var updates = [];
+    for(var i=1; i<lines.length; i++) {
+        var line = lines[i].trim();
+        if(!line) continue;
+        var cols = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+        var filename = cols[0];
+        var dat = cols[4] !== undefined ? cols[4].replace(/(^"|"$)/g, '') : '';
+        var serial_number = cols[5] !== undefined ? cols[5].replace(/(^"|"$)/g, '') : '';
+        var departemen = cols[6] !== undefined ? cols[6].replace(/(^"|"$)/g, '') : '';
+        var pengguna = cols[7] !== undefined ? cols[7].replace(/(^"|"$)/g, '') : '';
+        if(filename) updates.push({ filename: filename, dat: dat, serial_number: serial_number, departemen: departemen, pengguna: pengguna });
+    }
+    if(updates.length === 0) return alert('Tidak ada data untuk diupdate.');
+    if(!confirm('Ditemukan ' + updates.length + ' data untuk diupdate. Lanjutkan update massal?')) return;
+    Promise.all(updates.map(function(u) {
+        return fetch('/api/devices/' + u.filename, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dat: u.dat, serial_number: u.serial_number, departement: u.departemen, pengguna: u.pengguna })
+        });
+    })).then(function() {
+        alert('Update massal selesai!');
+        window.location.reload();
+    }).catch(function() { alert('Terjadi kesalahan saat upload.'); });
+}
+
+document.getElementById('searchInput').addEventListener('keyup', function() {
+    var filter = this.value.toLowerCase();
+    var rows = document.querySelectorAll('#inventoryBody tr:not(#empty-row)');
+    rows.forEach(function(row) {
+        row.style.display = row.textContent.toLowerCase().includes(filter) ? '' : 'none';
+    });
+});
+
+var modal = document.getElementById('deviceModal');
+function openModal(filename, hostname, ip, mac, os, dat, serial_number, departemen, pengguna) {
+    filename = filename || '';
+    hostname = hostname || '';
+    ip = ip || '';
+    mac = mac || '';
+    os = os || '';
+    dat = dat || '';
+    serial_number = serial_number || '';
+    departemen = departemen || '';
+    pengguna = pengguna || '';
+    document.getElementById('editFilename').value = filename;
+    document.getElementById('devHostname').value = hostname;
+    document.getElementById('devIp').value = ip;
+    document.getElementById('devMac').value = mac;
+    document.getElementById('devOs').value = os;
+    document.getElementById('devDat').value = dat;
+    document.getElementById('devSerial').value = serial_number;
+    document.getElementById('devDepartemen').value = departemen;
+    document.getElementById('devPengguna').value = pengguna;
+    document.getElementById('modalTitle').textContent = filename ? 'Edit Aset' : 'Tambah Aset';
+    if(filename) {
+        document.getElementById('devHostname').readOnly = true;
+        document.getElementById('devHostname').classList.add('opacity-70');
+    } else {
+        document.getElementById('devHostname').readOnly = false;
+        document.getElementById('devHostname').classList.remove('opacity-70');
+    }
+    modal.classList.remove('hidden');
+}
+
+function closeModal() { modal.classList.add('hidden'); }
+
+function saveDevice() {
+    var filename = document.getElementById('editFilename').value;
+    var data = {
+        hostname: document.getElementById('devHostname').value,
+        ip: document.getElementById('devIp').value,
+        mac: document.getElementById('devMac').value,
+        os: document.getElementById('devOs').value,
+        dat: document.getElementById('devDat').value,
+        serial_number: document.getElementById('devSerial').value,
+        departement: document.getElementById('devDepartemen').value,
+        pengguna: document.getElementById('devPengguna').value
+    };
+    if(!data.hostname) { alert('Hostname wajib diisi'); return; }
+    var url = filename ? '/api/devices/' + filename : '/api/devices';
+    var method = filename ? 'PUT' : 'POST';
+    fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    }).then(function(res) { return res.json(); }).then(function(res) {
+        if(res.success) { window.location.reload(); }
+        else { alert('Error: ' + res.message); }
+    }).catch(function() { alert('Terjadi kesalahan jaringan'); });
+}
+
+function deleteDevice(filename) {
+    if(confirm('Anda yakin ingin menghapus aset ini? Data JSON akan dihapus secara permanen.')) {
+        fetch('/api/devices/' + filename, { method: 'DELETE' })
+        .then(function(res) { return res.json(); })
+        .then(function(res) {
+            if(res.success) { window.location.reload(); }
+            else { alert('Error: ' + res.message); }
+        }).catch(function() { alert('Terjadi kesalahan jaringan'); });
+    }
+}
+</script>
+
+<%- include('partials/footer') %>
