@@ -6,15 +6,24 @@
 <h2 class="font-headline-lg text-headline-lg text-on-surface">Dasbor Utama</h2>
 <p class="font-body-md text-body-md text-on-surface-variant">Status real-time aset ProTech Infrastructure.</p>
 </div>
+<div class="flex flex-col items-end gap-2">
 <div class="flex gap-3">
-<button class="flex items-center gap-2 px-4 py-2 border border-outline-variant rounded-xl text-on-surface font-label-md text-label-md hover:bg-surface-container transition-colors">
-<span class="material-symbols-outlined" data-icon="file_download">file_download</span>
-                Ekspor PDF
-            </button>
-<button class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-xl font-label-md text-label-md hover:opacity-90 transition-opacity shadow-lg shadow-primary/20">
-<span class="material-symbols-outlined" data-icon="publish">publish</span>
-                Terapkan Agen
-            </button>
+<button id="btn-ftp-sync" onclick="triggerFtpSync()" class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-xl font-label-md text-label-md hover:opacity-90 transition-opacity shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed">
+<span id="sync-icon" class="material-symbols-outlined" data-icon="sync">sync</span>
+<span id="sync-label">Sync dari FTP</span>
+</button>
+</div>
+<!-- Status sync terakhir -->
+<div id="sync-status-bar" class="text-right">
+<% if (syncState && syncState.lastSyncAt) { %>
+<p class="font-mono-data text-[11px] <%= syncState.lastSyncStatus === 'success' ? 'text-status-success' : 'text-status-error' %>">
+<span class="material-symbols-outlined text-xs align-middle"><%= syncState.lastSyncStatus === 'success' ? 'check_circle' : 'error' %></span>
+<%= syncState.lastSyncMessage %> &bull; <span class="text-on-surface-variant"><%= new Date(syncState.lastSyncAt).toLocaleString('id-ID') %></span>
+</p>
+<% } else { %>
+<p class="font-mono-data text-[11px] text-on-surface-variant">Belum pernah sync dari FTP.</p>
+<% } %>
+</div>
 </div>
 </div>
 <!-- KPI Cards -->
@@ -95,32 +104,63 @@
 <!-- Bento Grid Layout -->
 <div class="grid grid-cols-12 gap-gutter">
 <!-- Topologi Infrastruktur -->
-<div class="col-span-12 lg:col-span-8 bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden flex flex-col h-[500px] shadow-sm">
-<div class="p-5 border-b border-outline-variant flex items-center justify-between bg-surface-container-low">
-<h4 class="font-headline-sm text-headline-sm">Topologi Infrastruktur</h4>
-<div class="flex gap-2">
-<span class="px-2 py-1 bg-surface-container-high rounded text-[10px] font-mono-data uppercase border border-outline-variant">Live View</span>
-<button class="p-1 hover:text-primary transition-colors"><span class="material-symbols-outlined" data-icon="fullscreen">fullscreen</span></button>
+<div id="liveViewCard" class="col-span-12 lg:col-span-8 bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden flex flex-col h-[500px] shadow-sm">
+<div class="p-4 border-b border-outline-variant flex items-center justify-between bg-surface-container-low gap-4">
+<h4 class="font-headline-sm text-headline-sm whitespace-nowrap">Live View Map</h4>
+<div class="flex gap-3 items-center flex-1 ml-2">
+<span class="text-[10px] font-bold text-status-success uppercase bg-status-success/10 px-2 py-1 rounded border border-status-success/20">Aktif: <span id="dashCountAktif">0</span></span>
+<span class="text-[10px] font-bold text-status-error uppercase bg-status-error/10 px-2 py-1 rounded border border-status-error/20">Offline: <span id="dashCountOffline">0</span></span>
+</div>
+<div class="flex gap-2 items-center justify-end">
+<select id="dashFilterDepartemen" class="bg-surface-container border border-outline-variant rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary max-w-[150px]">
+<option value="">Semua Bagian</option>
+<% 
+    const dashDepts = new Set();
+    if(typeof devices !== 'undefined') {
+        devices.forEach(d => {
+            if(d.data.Departemen) dashDepts.add(d.data.Departemen);
+        });
+    }
+    Array.from(dashDepts).sort().forEach(dept => { 
+%>
+    <option value="<%= dept %>"><%= dept %></option>
+<% }); %>
+</select>
+<button id="dashRefreshPingBtn" class="p-1 hover:text-primary transition-colors" title="Refresh Ping"><span class="material-symbols-outlined" data-icon="refresh">refresh</span></button>
+<button id="dashFullscreenBtn" class="p-1 hover:text-primary transition-colors" title="Layar Penuh"><span class="material-symbols-outlined" data-icon="fullscreen">fullscreen</span></button>
 </div>
 </div>
-<div class="flex-1 relative bg-slate-50">
-<div class="absolute inset-0 p-8 flex flex-wrap gap-12 items-center justify-center pointer-events-none">
-<div class="w-16 h-16 rounded-full border-2 border-primary/40 bg-white shadow-lg flex items-center justify-center animate-pulse pointer-events-auto cursor-pointer hover:border-primary">
-<span class="material-symbols-outlined text-primary text-3xl" data-icon="dns">dns</span>
-</div>
-<div class="w-12 h-12 rounded-full border border-outline-variant bg-white shadow-sm flex items-center justify-center pointer-events-auto cursor-pointer hover:bg-surface-container">
-<span class="material-symbols-outlined text-on-surface-variant" data-icon="router">router</span>
-</div>
-<div class="w-12 h-12 rounded-full border border-outline-variant bg-white shadow-sm flex items-center justify-center pointer-events-auto cursor-pointer hover:bg-surface-container">
-<span class="material-symbols-outlined text-on-surface-variant" data-icon="laptop_mac">laptop_mac</span>
-</div>
-</div>
-<div class="absolute bottom-4 left-4 p-4 glass-panel rounded-xl space-y-2 max-w-xs shadow-sm">
-<div class="flex items-center gap-3">
-<div class="w-2 h-2 rounded-full bg-status-success"></div>
-<p class="font-label-md text-label-md">Main-Cluster-01 <span class="text-on-surface-variant ml-2 font-mono-data">AKTIF</span></p>
-</div>
-</div>
+<div class="flex-1 bg-slate-50 overflow-y-auto custom-scrollbar p-6">
+    <div class="flex flex-wrap gap-6 justify-center" id="dashDeviceGrid">
+    <% if(typeof devices !== 'undefined' && devices.length > 0) { %>
+        <% devices.forEach(function(device) { 
+            const userInfo = device.data["User Session (Whoami)"];
+            let ipAddress = 'Unknown';
+            if (device.data["LAN/Network Card"] && device.data["LAN/Network Card"].length > 0) {
+                const connectedCard = device.data["LAN/Network Card"].find(c => c["Status Hardware"] && c["Status Hardware"].includes("Connected"));
+                ipAddress = connectedCard ? connectedCard["IPv4 Address"] : device.data["LAN/Network Card"][0]["IPv4 Address"];
+            }
+            const hostname = userInfo && userInfo.Hostname ? userInfo.Hostname : device.filename;
+            const peng = device.data.Pengguna || (userInfo ? userInfo.Username : '') || 'Unknown';
+            const dept = device.data.Departemen || '';
+            const isLaptop = device.data["Sistem Operasi"] && device.data["Sistem Operasi"].toLowerCase().includes("laptop");
+            const icon = isLaptop ? "laptop_mac" : "desktop_windows";
+        %>
+        <div class="dash-device-node relative w-24 h-24 rounded-2xl bg-white shadow-sm border border-outline-variant flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:shadow-md transition-all group select-none" 
+             data-departemen="<%= dept %>"
+             ondblclick="window.location.href='/asset/<%= device.filename %>'">
+            
+            <div class="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-on-surface-variant/30 border-2 border-white dash-ping-indicator shadow-sm" title="Menunggu ping..." data-ping-ip="<%= ipAddress %>"></div>
+            
+            <span class="material-symbols-outlined text-primary/70 text-3xl group-hover:scale-110 transition-transform mb-1" data-icon="<%= icon %>"><%= icon %></span>
+            <p class="text-[10px] font-bold text-on-surface w-full text-center truncate px-2" title="<%= hostname %>"><%= hostname %></p>
+            <p class="text-[9px] text-on-surface-variant w-full text-center truncate px-2" title="<%= peng %>"><%= peng %></p>
+        </div>
+        <% }); %>
+    <% } else { %>
+        <p class="text-on-surface-variant text-sm w-full text-center py-10">Tidak ada perangkat.</p>
+    <% } %>
+    </div>
 </div>
 </div>
 <!-- Feed Aktivitas -->
@@ -129,7 +169,7 @@
 <h4 class="font-headline-sm text-headline-sm">Feed Aktivitas</h4>
 <span class="material-symbols-outlined text-on-surface-variant" data-icon="history">history</span>
 </div>
-<div class="flex-1 overflow-y-auto p-2 space-y-2">
+<div id="activity-feed-container" class="flex-1 overflow-y-auto p-2 space-y-2">
 <div class="p-3 hover:bg-surface-container transition-colors rounded-xl border border-transparent hover:border-outline-variant group">
 <div class="flex gap-4">
 <div class="mt-1 w-2 h-2 rounded-full bg-status-success shadow-[0_0_8px_rgba(34,197,94,0.3)]"></div>
@@ -193,35 +233,217 @@
 </div>
 
 <script>
-    // Real-time update simulator for the feed (Indonesian)
-    const activityFeed = document.querySelector('.overflow-y-auto');
-    const items = [
-        { text: 'Sistem web aplikasi berhasil dimulai', meta: 'SISTEM • BARU SAJA', status: 'primary' },
-        { text: 'Memuat data inventaris PC dari lokal', meta: 'DATA • 1M LALU', status: 'status-success' }
-    ];
+// =============================================
+// LIVE VIEW MAP LOGIC
+// =============================================
+document.addEventListener('DOMContentLoaded', () => {
+    const dashFilter = document.getElementById('dashFilterDepartemen');
+    const nodes = document.querySelectorAll('.dash-device-node');
 
-    let index = 0;
-    setInterval(() => {
-        if(!activityFeed) return;
-        const item = items[index];
-        const div = document.createElement('div');
-        div.className = 'p-3 hover:bg-surface-container transition-colors rounded-xl border border-transparent hover:border-outline-variant animate-pulse';
-        div.innerHTML = `
-            <div class="flex gap-4">
-                <div class="mt-1 w-2 h-2 rounded-full bg-${item.status}"></div>
-                <div class="flex-1">
-                    <p class="font-body-md text-body-md text-on-surface">${item.text}</p>
-                    <p class="text-on-surface-variant text-[11px] font-mono-data mt-0.5">${item.meta}</p>
-                </div>
-            </div>
-        `;
-        activityFeed.prepend(div);
-        if (activityFeed.children.length > 8) {
-            activityFeed.removeChild(activityFeed.lastElementChild);
+    if (dashFilter) {
+        dashFilter.addEventListener('change', () => {
+            const dept = dashFilter.value;
+            nodes.forEach(node => {
+                const nodeDept = node.getAttribute('data-departemen');
+                if (dept === '' || nodeDept === dept) {
+                    node.style.display = 'flex';
+                } else {
+                    node.style.display = 'none';
+                }
+            });
+            setTimeout(dashPingVisibleDevices, 500);
+        });
+    }
+
+    async function doDashPing(ip) {
+        try {
+            const res = await fetch(`/api/ping?ip=${ip}`);
+            return await res.json();
+        } catch (e) {
+            return { success: false };
         }
-        setTimeout(() => div.classList.remove('animate-pulse'), 1000);
-        index = (index + 1) % items.length;
-    }, 15000);
+    }
+
+    async function dashPingVisibleDevices() {
+        const visibleIndicators = Array.from(document.querySelectorAll('.dash-device-node'))
+            .filter(node => node.style.display !== 'none')
+            .map(node => node.querySelector('.dash-ping-indicator'))
+            .filter(indicator => indicator);
+        
+        const batchSize = 5;
+        for (let i = 0; i < visibleIndicators.length; i += batchSize) {
+            const batch = visibleIndicators.slice(i, i + batchSize);
+            await Promise.all(batch.map(async (indicator) => {
+                const ip = indicator.getAttribute('data-ping-ip');
+                if(ip && ip !== 'Unknown' && ip !== '0.0.0.0') {
+                    indicator.classList.remove('bg-status-success', 'bg-status-error', 'bg-on-surface-variant/30');
+                    indicator.classList.add('bg-primary/50', 'animate-pulse');
+                    
+                    const result = await doDashPing(ip);
+                    
+                    indicator.classList.remove('bg-primary/50', 'animate-pulse');
+                    if (result.success && result.alive) {
+                        indicator.classList.add('bg-status-success');
+                        indicator.title = `Online (${result.time}ms)`;
+                    } else {
+                        indicator.classList.add('bg-status-error');
+                        indicator.title = 'Offline';
+                    }
+                }
+            }));
+        }
+        
+        let countAktif = 0;
+        let countOffline = 0;
+        visibleIndicators.forEach(ind => {
+            if (ind.classList.contains('bg-status-success')) countAktif++;
+            else if (ind.classList.contains('bg-status-error')) countOffline++;
+        });
+        const elAktif = document.getElementById('dashCountAktif');
+        const elOffline = document.getElementById('dashCountOffline');
+        if (elAktif) elAktif.textContent = countAktif;
+        if (elOffline) elOffline.textContent = countOffline;
+    }
+    
+    // Initial ping and start interval
+    if(nodes.length > 0) {
+        dashPingVisibleDevices();
+        setInterval(dashPingVisibleDevices, 10000);
+    }
+
+    const refreshBtn = document.getElementById('dashRefreshPingBtn');
+    if (refreshBtn) refreshBtn.addEventListener('click', dashPingVisibleDevices);
+
+    const dashFullscreenBtn = document.getElementById('dashFullscreenBtn');
+    const liveViewCard = document.getElementById('liveViewCard');
+    if (dashFullscreenBtn && liveViewCard) {
+        dashFullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                liveViewCard.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        });
+    }
+});
+// =============================================
+// FTP SYNC — UI Logic
+// =============================================
+let isSyncing = false;
+
+async function triggerFtpSync() {
+    if (isSyncing) return;
+
+    const btn = document.getElementById('btn-ftp-sync');
+    const icon = document.getElementById('sync-icon');
+    const label = document.getElementById('sync-label');
+
+    isSyncing = true;
+    btn.disabled = true;
+    icon.style.animation = 'spin 1s linear infinite';
+    icon.textContent = 'sync';
+    label.textContent = 'Menyinkronkan...';
+
+    try {
+        const res = await fetch('/api/ftp/sync', { method: 'POST' });
+        const data = await res.json();
+
+        if (data.success) {
+            showToast('✅ ' + data.message, 'success');
+            // Tambahkan ke feed aktivitas
+            addActivityItem(`FTP Sync selesai: ${data.downloaded ? data.downloaded.length : 0} file diperbarui`, 'BARU SAJA • FTP SYNC', 'status-success');
+            // Reload setelah 1.5 detik agar data terbaru tampil
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast('⚠️ ' + data.message, 'error');
+            addActivityItem('FTP Sync gagal: ' + data.message, 'BARU SAJA • FTP SYNC', 'status-error');
+        }
+    } catch (err) {
+        showToast('❌ Tidak dapat terhubung ke server.', 'error');
+    } finally {
+        isSyncing = false;
+        btn.disabled = false;
+        icon.style.animation = '';
+        icon.textContent = 'sync';
+        label.textContent = 'Sync dari FTP';
+    }
+}
+
+// Toast notification
+function showToast(message, type = 'success') {
+    const existing = document.getElementById('ftp-toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'ftp-toast';
+    toast.style.cssText = `
+        position: fixed; bottom: 2rem; right: 2rem; z-index: 9999;
+        padding: 1rem 1.5rem; border-radius: 1rem;
+        font-size: 0.875rem; font-weight: 500;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+        backdrop-filter: blur(12px);
+        animation: slideInToast 0.3s ease;
+        max-width: 380px;
+        background: ${type === 'success' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)'};
+        border: 1px solid ${type === 'success' ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.4)'};
+        color: ${type === 'success' ? '#22c55e' : '#ef4444'};
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => { toast.style.animation = 'fadeOutToast 0.3s ease forwards'; setTimeout(() => toast.remove(), 300); }, 4000);
+}
+
+// Feed aktivitas
+function addActivityItem(text, meta, statusColor) {
+    const feed = document.getElementById('activity-feed-container');
+    if (!feed) return;
+    const div = document.createElement('div');
+    div.className = 'p-3 hover:bg-surface-container transition-colors rounded-xl border border-transparent hover:border-outline-variant';
+    div.innerHTML = `
+        <div class="flex gap-4">
+            <div class="mt-1 w-2 h-2 rounded-full bg-${statusColor} shadow-[0_0_8px_rgba(34,197,94,0.3)]"></div>
+            <div class="flex-1">
+                <p class="font-body-md text-body-md text-on-surface">${text}</p>
+                <p class="text-on-surface-variant text-[11px] font-mono-data mt-0.5">${meta}</p>
+            </div>
+        </div>`;
+    feed.prepend(div);
+    if (feed.children.length > 8) feed.removeChild(feed.lastElementChild);
+}
+
+// CSS untuk animasi
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes slideInToast { from { opacity:0; transform: translateY(1rem); } to { opacity:1; transform: translateY(0); } }
+    @keyframes fadeOutToast { from { opacity:1; } to { opacity:0; transform: translateY(1rem); } }
+`;
+document.head.appendChild(style);
+
+// =============================================
+// EKSPOR PDF — Dashboard
+// =============================================
+function printDashboard() {
+    document.body.setAttribute('data-print-date', new Date().toLocaleString('id-ID'));
+    window.print();
+}
+// Selalu set tanggal cetak saat load
+document.body.setAttribute('data-print-date', new Date().toLocaleString('id-ID'));
+
+// Feed simulator bawaan
+const activityFeed = document.getElementById('activity-feed-container');
+const items = [
+    { text: 'Sistem web aplikasi berhasil dimulai', meta: 'SISTEM • BARU SAJA', status: 'primary' },
+    { text: 'Memuat data inventaris PC dari lokal', meta: 'DATA • 1M LALU', status: 'status-success' }
+];
+let index = 0;
+setInterval(() => {
+    if(!activityFeed) return;
+    addActivityItem(items[index].text, items[index].meta, items[index].status);
+    index = (index + 1) % items.length;
+}, 15000);
 </script>
 
 <%- include('partials/footer') %>

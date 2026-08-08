@@ -64,13 +64,25 @@
 </div>
 <!-- Quick Actions -->
 <div class="flex gap-3">
-<button class="flex items-center gap-2 px-4 py-2 border border-outline-variant rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-all">
-<span class="material-symbols-outlined text-[20px]">refresh</span>
-<span class="font-label-md">Mulai Ulang</span>
+<button onclick="powerAction('<%= ipAddress %>', 'restart')" class="flex items-center gap-2 px-4 py-2 border border-amber-500/40 text-amber-700 rounded-lg hover:bg-amber-50 transition-all">
+<span class="material-symbols-outlined text-[20px]">restart_alt</span>
+<span class="font-label-md">Restart</span>
 </button>
-<button onclick="launchVNC('<%= ipAddress %>')" class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg hover:opacity-90 transition-all">
+<button onclick="powerAction('<%= ipAddress %>', 'shutdown')" class="flex items-center gap-2 px-4 py-2 border border-status-error/40 text-status-error rounded-lg hover:bg-status-error/10 transition-all">
+<span class="material-symbols-outlined text-[20px]">power_off</span>
+<span class="font-label-md">Matikan</span>
+</button>
+<button onclick="printAsset()" class="flex items-center gap-2 px-4 py-2 border border-outline-variant rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-all">
+<span class="material-symbols-outlined text-[20px]">print</span>
+<span class="font-label-md">Ekspor PDF</span>
+</button>
+<button onclick="openWebVNC('<%= ipAddress %>')" class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg hover:opacity-90 transition-all">
 <span class="material-symbols-outlined text-[20px]">desktop_windows</span>
 <span class="font-label-md">Desktop Jarak Jauh</span>
+</button>
+<button onclick="launchVNC('<%= ipAddress %>')" class="flex items-center gap-2 px-4 py-2 border border-outline-variant rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-all">
+<span class="material-symbols-outlined text-[20px]">open_in_new</span>
+<span class="font-label-md">UltraVNC Viewer</span>
 </button>
 </div>
 </div>
@@ -175,6 +187,10 @@
 <td class="px-6 py-4 text-on-surface font-semibold"><%= penggunaInfo %></td>
 </tr>
 <tr class="hover:bg-surface-container-low transition-colors">
+<td class="px-6 py-4 text-on-surface-variant font-label-md">Akun Windows</td>
+<td class="px-6 py-4 text-on-surface font-mono-data"><%= userInfo.Username || '-' %></td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
 <td class="px-6 py-4 text-on-surface-variant font-label-md">Sistem Operasi</td>
 <td class="px-6 py-4 text-on-surface">
 <%= osInfo %> 
@@ -254,6 +270,42 @@ Serial: <span class="text-primary"><%= device.data["Serial Number"] || '-' %></s
         });
     });
 
+    function powerAction(ip, action) {
+        if (!ip || ip === 'Unknown') {
+            alert('Alamat IP tidak tersedia untuk perangkat ini.');
+            return;
+        }
+        const msg = action === 'restart'
+            ? `Restart PC ${ip}?\n\nPC akan restart dalam 15 detik.`
+            : `Matikan PC ${ip}?\n\nPC akan shutdown dalam 15 detik.`;
+        if (!confirm(msg)) return;
+
+        fetch('/api/remote/shutdown', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ips: [ip], action: action })
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            if (data.success) {
+                alert('✅ ' + data.message);
+            } else {
+                alert('❌ ' + data.message);
+            }
+        })
+        .catch(function() {
+            alert('❌ Tidak dapat terhubung ke server.');
+        });
+    }
+
+    function openWebVNC(ip) {
+        if (!ip || ip === 'Unknown') {
+            alert('Alamat IP tidak tersedia untuk perangkat ini.');
+            return;
+        }
+        window.open('/remote/' + ip, 'vnc_' + ip, 'width=1024,height=768');
+    }
+
     function launchVNC(ip) {
         if (!ip || ip === 'Unknown') {
             alert('Alamat IP tidak tersedia untuk perangkat ini.');
@@ -276,6 +328,17 @@ Serial: <span class="text-primary"><%= device.data["Serial Number"] || '-' %></s
             alert('Tidak dapat terhubung ke server.');
         });
     }
+
+    // =============================================
+    // EKSPOR PDF — Detail Aset
+    // =============================================
+    function printAsset() {
+        document.body.setAttribute('data-print-date', new Date().toLocaleString('id-ID'));
+        window.print();
+    }
+
+    // Selalu set tanggal cetak saat load
+    document.body.setAttribute('data-print-date', new Date().toLocaleString('id-ID'));
 </script>
 
 <%- include('partials/footer') %>

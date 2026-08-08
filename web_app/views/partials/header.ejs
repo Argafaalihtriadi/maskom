@@ -25,7 +25,123 @@
             background: #d8dadc;
             border-radius: 10px;
         }
+
+        /* =============================================
+           PRINT / PDF EXPORT STYLES
+           ============================================= */
+        @media print {
+            /* Reset: sembunyikan semua elemen UI */
+            nav, aside, header,
+            #sidebar, .sidebar,
+            [class*="sidebar"],
+            #btn-ftp-sync, #inv-sync-btn,
+            button:not(.print-btn),
+            .flex.gap-3 > button,
+            .flex.gap-3 > a,
+            .overflow-y-auto,
+            #filterBadge,
+            [id$="-toast"],
+            .animate-pulse,
+            script {
+                display: none !important;
+            }
+
+            /* Layout dasar cetak */
+            *, *::before, *::after {
+                box-shadow: none !important;
+                text-shadow: none !important;
+            }
+
+            html, body {
+                width: 100%;
+                height: auto;
+                background: #ffffff !important;
+                color: #111827 !important;
+                font-family: 'Inter', Arial, sans-serif;
+                font-size: 10pt;
+            }
+
+            /* Konten utama ambil full width */
+            .flex-1, main, [class*="p-lg"] {
+                width: 100% !important;
+                padding: 0 !important;
+                overflow: visible !important;
+            }
+
+            /* Header laporan cetak */
+            body::before {
+                content: "ProTech Infrastructure — Laporan Inventaris";
+                display: block;
+                font-size: 18pt;
+                font-weight: 700;
+                color: #111827;
+                border-bottom: 2px solid #494bd6;
+                padding-bottom: 8px;
+                margin-bottom: 16px;
+            }
+
+            body::after {
+                content: "Dicetak pada: " attr(data-print-date);
+                display: block;
+                font-size: 9pt;
+                color: #6b7280;
+                margin-top: 4px;
+                margin-bottom: 24px;
+            }
+
+            /* Tabel inventaris cetak */
+            table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+                font-size: 8.5pt;
+            }
+
+            table thead {
+                background-color: #f3f4f6 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            table th, table td {
+                border: 1px solid #d1d5db !important;
+                padding: 5px 8px !important;
+                text-align: left;
+            }
+
+            table th {
+                font-weight: 700;
+                color: #374151 !important;
+                background-color: #e5e7eb !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            /* Badge status cetak */
+            .bg-emerald-50, [class*="bg-status-success"] {
+                background-color: #d1fae5 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            /* KPI cards di dashboard */
+            .grid.grid-cols-4 > div,
+            [class*="rounded-xl"] {
+                border: 1px solid #d1d5db !important;
+                background: #fff !important;
+                break-inside: avoid;
+            }
+
+            /* Hindari page break di tengah row */
+            tr { page-break-inside: avoid; }
+
+            /* Footer cetak */
+            @page {
+                size: A4 landscape;
+                margin: 15mm 12mm;
+            }
+        }
     </style>
+
 <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -139,6 +255,10 @@
 <span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
 <span class="font-label-md text-label-md">Dasbor</span>
 </a>
+<a class="flex items-center gap-3 px-4 py-3 <%= typeof activePage !== 'undefined' && activePage === 'monitoring' ? 'text-primary font-semibold bg-primary/5' : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container' %> transition-colors duration-200 rounded-xl" href="/monitoring">
+<span class="material-symbols-outlined" data-icon="monitoring">monitoring</span>
+<span class="font-label-md text-label-md">Monitoring</span>
+</a>
 <a class="flex items-center gap-3 px-4 py-3 <%= typeof activePage !== 'undefined' && activePage === 'inventory' ? 'text-primary font-semibold bg-primary/5' : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container' %> transition-colors duration-200 rounded-xl" href="/inventory">
 <span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
 <span class="font-label-md text-label-md">Inventaris</span>
@@ -147,10 +267,12 @@
 <span class="material-symbols-outlined" data-icon="settings_remote">settings_remote</span>
 <span class="font-label-md text-label-md">Daya Jarak Jauh</span>
 </a>
-<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-200 rounded-xl" href="#">
-<span class="material-symbols-outlined" data-icon="hub">hub</span>
-<span class="font-label-md text-label-md">Peta Jaringan</span>
+<a class="flex items-center gap-3 px-4 py-3 <%= typeof activePage !== 'undefined' && activePage === 'deployer' ? 'text-primary font-semibold bg-primary/5' : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container' %> transition-colors duration-200 rounded-xl" href="/deployer">
+<span class="material-symbols-outlined" data-icon="rocket_launch">rocket_launch</span>
+<span class="font-label-md text-label-md">Folder Deployer</span>
 </a>
+
+
 <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-200 rounded-xl" href="#">
 <span class="material-symbols-outlined" data-icon="settings">settings</span>
 <span class="font-label-md text-label-md">Pengaturan</span>
@@ -165,7 +287,7 @@
 <span class="material-symbols-outlined" data-icon="help">help</span>
 <span class="font-label-md text-label-md">Dukungan</span>
 </a>
-<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-200 rounded-xl" href="#">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-200 rounded-xl" href="/logout">
 <span class="material-symbols-outlined" data-icon="logout">logout</span>
 <span class="font-label-md text-label-md">Keluar</span>
 </a>
@@ -195,11 +317,11 @@
 </button>
 <div class="flex items-center gap-3 ml-2 border-l border-outline-variant pl-4">
 <div class="text-right">
-<p class="font-label-md text-label-md leading-none">Admin User</p>
-<p class="text-label-sm text-on-surface-variant uppercase tracking-widest mt-1 text-[10px]">Otoritas Lvl 4</p>
+<p class="font-label-md text-label-md leading-none"><%= typeof userSession !== 'undefined' && userSession ? userSession.username : 'Admin User' %></p>
+<p class="text-label-sm text-on-surface-variant uppercase tracking-widest mt-1 text-[10px]"><%= typeof userSession !== 'undefined' && userSession ? userSession.groupName : 'Otoritas Lvl 4' %></p>
 </div>
-<div class="w-8 h-8 rounded-full overflow-hidden bg-primary-container flex items-center justify-center">
-<img alt="Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTD2VhpMUOT_Ivhrggt7ZUOG8aq11XTVSYhMeyWqsnQYK9PVpibte51JI_C5UfTHupDNmAUHBfy-OFKqnVuWCY5ovKix3bihM55hSw31SN6LbMNw1dRW9jsVM9SPr4F6OQgrPssSn0xVEp3D2wnT1sXCUSdCFMG0IIXuPvC3j7QWb8smj0IIdvGfSJi-lmw-EgBbjhHUEFMg9N0vShTH2YWYCl2ExGD1aR-B87B6zToTTeFTuZMtA"/>
+<div class="w-8 h-8 rounded-full overflow-hidden bg-primary-container flex items-center justify-center font-bold text-primary text-xs">
+<%= typeof userSession !== 'undefined' && userSession ? userSession.username.substring(0,2).toUpperCase() : 'AD' %>
 </div>
 </div>
 </div>

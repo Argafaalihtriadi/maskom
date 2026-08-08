@@ -1,10 +1,10 @@
 # MaskomApp — Web App Manajemen Infrastruktur IT
 
-Web application berbasis Node.js + Express + EJS untuk manajemen aset komputer, inventaris, dan kontrol jaringan (Wake-on-LAN & Remote Desktop).
+Web application berbasis Node.js + Express + EJS untuk manajemen aset komputer, inventaris, kontrol jaringan (Wake-on-LAN), remote control, file transfer, dan monitoring real-time.
 
 ---
 
-## 🚀 Cara Menjalankan
+## Cara Menjalankan
 
 ```bash
 cd c:\laragon\www\MaskomApp\web_app
@@ -16,13 +16,24 @@ Akses di browser: **http://localhost:3000**
 
 ---
 
-## 📁 Struktur Proyek
+## Struktur Proyek
 
 ```
 web_app/
 ├── server.js              # Backend Express + semua API endpoint
 ├── package.json
+├── .env                   # Konfigurasi environment (PORT, SESSION_SECRET, dll)
 ├── data_komputer/         # Folder data JSON per perangkat (output main.py)
+├── public/
+│   └── screenshots/       # Screenshot hasil monitoring agent
+├── uploads/               # File upload sementara
+├── Wol pendukung/         # Script client-side
+│   ├── Setup-Client.ps1      # Setup lengkap PC client (WOL, remote, agent)
+│   ├── Setup-WOL.ps1         # Setup WOL & remote shutdown
+│   ├── Agent-Monitor.ps1     # Screen capture agent (berjalan di client)
+│   ├── Launcher-Agent.vbs    # VBS launcher (fully hidden, no window/taskbar)
+│   ├── Jalankan-Setup-Client.bat
+│   └── Jalankan-SetupWOL.bat
 ├── vnc/
 │   └── x64/
 │       └── vncviewer.exe  # UltraVNC Viewer executable
@@ -30,121 +41,183 @@ web_app/
     ├── partials/
     │   ├── header.ejs
     │   └── footer.ejs
-    ├── dashboard.ejs       # Halaman dasbor utama
-    ├── inventory.ejs       # Halaman daftar inventaris komputer
-    ├── asset.ejs           # Halaman detail aset per komputer
-    └── wol.ejs             # Halaman Wake-on-LAN
+    ├── login.ejs         # Halaman login
+    ├── dashboard.ejs     # Halaman dasbor utama
+    ├── inventory.ejs     # Halaman daftar inventaris komputer
+    ├── asset.ejs         # Halaman detail aset per komputer
+    ├── monitoring.ejs    # Halaman monitoring real-time (screenshot)
+    ├── wol.ejs           # Halaman Wake-on-LAN
+    ├── vnc.ejs           # Halaman Remote Desktop via noVNC
+    └── export.ejs        # Halaman ekspor data
 ```
 
 ---
 
-## ✅ Fitur yang Sudah Berjalan
+## Fitur yang Sudah Berjalan
 
-### 1. 📊 Dashboard
+### 1. Dashboard
 - Ringkasan total aset, status online/offline
 - Grafik distribusi OS dan komputer aktif
 
-### 2. 🖥️ Inventaris Komputer (`/inventory`)
+### 2. Inventaris Komputer (`/inventory`)
 Data dibaca langsung dari file `.json` hasil `main.py` di folder `data_komputer/`.
 
-**Kolom Tabel:**
-| Kolom | Sumber Data |
-|---|---|
-| Nama Perangkat | `User Session (Whoami).Hostname` |
-| NO DAT | `DAT` *(field khusus, bisa diisi manual)* |
-| Serial Number | `Serial Number` *(field khusus, bisa diisi manual)* |
-| Departemen | `Departemen` *(field khusus, bisa diisi manual)* |
-| User | `Pengguna` atau fallback ke `Username` Windows |
-| Alamat IP | `LAN/Network Card[].IPv4 Address` |
-| OS | `Sistem Operasi` |
-| RAM | `Memory & SPD.General.Total Size` + Tipe DDR |
-| Penyimpanan | `Penyimpanan[0]` — deteksi otomatis HDD/SSD |
-| Status | Aktif (default) |
+**Fitur:**
+- CRUD Aset — Tambah, Edit, Hapus via modal
+- Pencarian real-time (search bar)
+- Ekspor CSV — Unduh seluruh data inventaris ke file `.csv`
+- Impor CSV massal — Upload file CSV untuk update data ke banyak perangkat
 
-**Fitur Tambahan di Halaman Inventaris:**
-- ✅ **CRUD Aset** — Tambah, Edit, Hapus via modal
-- ✅ **Pencarian real-time** (search bar)
-- ✅ **Ekspor CSV** — Unduh seluruh data inventaris ke file `.csv`
-- ✅ **Impor CSV massal** — Upload file CSV untuk update NO DAT, Serial, Departemen, Pengguna ke banyak perangkat sekaligus (tanpa merusak data JSON lainnya)
-
-> **Format CSV (8 kolom):**
-> `Filename, Hostname, IP Address, OS, NO DAT, Serial Number, Departemen, Pengguna`
->
-> ⚠️ Jangan ubah kolom `Filename` — ini adalah kunci referensi ke file JSON.
-
-### 3. 🔍 Detail Aset (`/asset/:filename`)
+### 3. Detail Aset (`/asset/:filename`)
 - Spesifikasi lengkap: CPU, RAM, GPU, Mainboard, Storage, OS
 - Menampilkan: NO DAT, Serial Number, Departemen, Pengguna
 - Identitas Jaringan: IP, MAC, Subnet
-- **Tombol "Desktop Jarak Jauh"** — meluncurkan UltraVNC Viewer langsung dengan IP pre-filled
+- Tombol remote control: VNC, Shutdown, Lock, Kirim Pesan
 
-### 4. ⚡ Wake-on-LAN (`/wol`)
+### 4. Wake-on-LAN (`/wol`)
 - Daftar semua perangkat beserta MAC Address
-- **Multi-select** — pilih lebih dari 1 komputer sekaligus
-- Kirim Magic Packet ke semua komputer yang dicentang
+- Multi-select — kirim Magic Packet ke banyak komputer sekaligus
 - Pencarian real-time
 
-### 5. 🖥️ Desktop Jarak Jauh (UltraVNC)
-- Klik tombol **"Desktop Jarak Jauh"** di halaman detail aset
-- Server Node.js akan meluncurkan `vncviewer.exe` dengan IP komputer target otomatis
-- Path executable dikonfigurasi di `server.js`:
-  ```js
-  const VNC_VIEWER_PATH = 'C:\\laragon\\www\\MaskomApp\\web_app\\vnc\\x64\\vncviewer.exe';
-  ```
+### 5. Remote Control (`/monitoring`)
+- **Shutdown / Restart** — matikan atau restart komputer client dari jarak jauh via WMI
+- **Lock Workstation** — kunci layar komputer client
+- **Kirim Pesan** — tampilkan popup message di layar client (`msg` command)
+- **Jalankan Perintah** — eksekusi command/script apapun di client via WMI
+- **File Transfer** — upload file ke client (via WMI atau SMB), download dari client
+
+### 6. Live Monitoring (`/monitoring`)
+- Tampilan grid semua perangkat dengan screenshot real-time
+- Screenshot otomatis di-refresh setiap 5 detik
+- Status online/offline berdasarkan ping
+- Pilih perangkat untuk remote control
+
+### 7. Remote Desktop
+- **UltraVNC Viewer** — luncurkan VNC viewer langsung dari browser
+- **noVNC (Web VNC)** — akses remote desktop langsung di browser tanpa instalasi viewer
+
+### 8. FTP Sync
+- Sinkronisasi data inventaris dari FTP server
+- Import otomatis file JSON ke folder `data_komputer/`
 
 ---
 
-## 🔌 API Endpoint
+## API Endpoint
+
+### Autentikasi
+| Method | Endpoint | Deskripsi |
+|--------|----------|-----------|
+| `GET` | `/login` | Halaman login |
+| `POST` | `/login` | Login (username & password) |
+| `GET` | `/logout` | Logout |
 
 ### Perangkat (CRUD)
 | Method | Endpoint | Deskripsi |
-|---|---|---|
+|--------|----------|-----------|
 | `GET` | `/api/devices` | Ambil semua data perangkat |
 | `POST` | `/api/devices` | Tambah perangkat baru |
 | `PUT` | `/api/devices/:filename` | Update field perangkat |
 | `DELETE` | `/api/devices/:filename` | Hapus perangkat |
-
-**Body `PUT /api/devices/:filename` (semua opsional):**
-```json
-{
-  "hostname": "PC-ADMIN-01",
-  "ip": "192.168.1.5",
-  "mac": "00:1A:2B:3C:4D:5E",
-  "os": "Windows 11",
-  "dat": "C02.123456",
-  "serial_number": "TAC10Y0058",
-  "departement": "IT",
-  "pengguna": "Budi Santoso"
-}
-```
-
-> Field `dat`, `serial_number`, `departement`, `pengguna` disisipkan ke JSON **tanpa mengubah** data spesifikasi hardware lainnya.
+| `GET` | `/api/export/inventory.csv` | Ekspor CSV inventaris |
 
 ### Wake-on-LAN
 | Method | Endpoint | Deskripsi |
-|---|---|---|
+|--------|----------|-----------|
 | `POST` | `/api/wol` | Kirim Magic Packet |
 
-**Body:**
-```json
-{ "macs": ["AA:BB:CC:DD:EE:FF", "11:22:33:44:55:66"] }
-```
+**Body:** `{ "macs": ["AA:BB:CC:DD:EE:FF"] }`
 
-### Remote Desktop (VNC)
+### Ping / Status
 | Method | Endpoint | Deskripsi |
-|---|---|---|
+|--------|----------|-----------|
+| `GET` | `/api/ping?ips=...` | Ping satu atau banyak IP |
+
+### Remote Control (via WMI)
+| Method | Endpoint | Deskripsi |
+|--------|----------|-----------|
+| `POST` | `/api/remote/shutdown` | Shutdown / Restart komputer client |
+| `POST` | `/api/remote/lock` | Lock workstation client |
+| `POST` | `/api/remote/message` | Kirim popup pesan ke client |
+| `POST` | `/api/remote/run` | Eksekusi perintah di client |
 | `POST` | `/api/remote/vnc` | Luncurkan UltraVNC Viewer |
 
-**Body:**
+### File Transfer (via WMI)
+| Method | Endpoint | Deskripsi |
+|--------|----------|-----------|
+| `POST` | `/api/remote/upload` | Upload file ke client (base64) |
+| `POST` | `/api/remote/upload-file` | Upload file via multipart form |
+| `GET` | `/api/remote/upload-files` | Daftar file yang sudah diupload |
+
+**Body upload (base64):**
 ```json
-{ "ip": "192.168.1.5" }
+{
+  "ip": "192.168.1.5",
+  "fileName": "file.txt",
+  "content": "base64...",
+  "destFolder": "C$\\Temp"
+}
+```
+
+### Monitoring (Screenshot)
+| Method | Endpoint | Deskripsi |
+|--------|----------|-----------|
+| `POST` | `/api/monitor/screenshot/:id` | Upload screenshot dari agent (tanpa auth) |
+| `GET` | `/api/monitor/screenshot/:id` | Ambil screenshot (dengan auth) |
+
+### FTP Sync
+| Method | Endpoint | Deskripsi |
+|--------|----------|-----------|
+| `POST` | `/api/ftp/sync` | Trigger sinkronisasi FTP |
+| `GET` | `/api/ftp/status` | Status sinkronisasi terakhir |
+
+---
+
+## Setup PC Client
+
+Agar PC client bisa dikontrol penuh dari dashboard, jalankan script berikut **sebagai Administrator** di PC client:
+
+### Setup Lengkap (WOL + Remote + Agent Monitoring)
+```
+powershell -ExecutionPolicy Bypass -File "Setup-Client.ps1"
+```
+
+Script ini akan:
+1. **WOL** — Aktifkan Wake on Magic Packet, matikan Energy Efficient Ethernet, matikan Fast Startup
+2. **Remote Shutdown** — Aktifkan firewall SMB-In, nonaktifkan Remote UAC, aktifkan Remote Registry, set LimitBlankPasswordUse=0
+3. **Administrator** — Aktifkan account Administrator
+4. **File Transfer** — Buat folder `C:\share`, buka firewall WMI
+5. **Agent Monitoring** — Install screen capture agent sebagai Scheduled Task (auto-start saat login)
+6. **Jalankan agent seka-rang** — langsung mulai monitoring
+
+### Setup WOL Saja
+```
+powershell -ExecutionPolicy Bypass -File "Setup-WOL.ps1"
+```
+
+### Jalankan Tanpa Jendela Terminal
+Double-click `Jalankan-Setup-Client.bat` — script berjalan hidden.
+
+---
+
+## Agent Monitoring (Screen Capture)
+
+`Agent-Monitor.ps1` berjalan di background setiap PC client:
+- Capture layar setiap 3 detik
+- Upload sebagai JPEG ke server via HTTP POST
+- Tidak ada jendela/taskbar (dijalankan via VBS launcher)
+- Auto-start saat user login (Scheduled Task)
+- Tidak mengganggu pekerjaan user
+
+### Uninstall Agent
+```
+powershell -ExecutionPolicy Bypass -File "Agent-Monitor.ps1" -Uninstall
 ```
 
 ---
 
-## 🗄️ Format Data JSON Perangkat
+## Format Data JSON Perangkat
 
-File disimpan di `data_komputer/<hostname>.json`. Field yang dihasilkan `main.py` **tidak akan pernah diubah** oleh web app. Web app hanya **menambahkan** field-field berikut di level root:
+File disimpan di `data_komputer/<ip>.json`. Web app hanya **menambahkan** field berikut di level root (tidak mengubah data hardware):
 
 ```json
 {
@@ -163,38 +236,56 @@ File disimpan di `data_komputer/<hostname>.json`. Field yang dihasilkan `main.py
 
 ---
 
-## ⚙️ Konfigurasi
+## Konfigurasi
+
+Buat file `.env` di folder `web_app/`:
+```
+PORT=3000
+SESSION_SECRET=your-secret-key
+VNC_PATH=C:\laragon\www\MaskomApp\web_app\vnc\x64\vncviewer.exe
+FTP_HOST=your-ftp-server
+FTP_USER=your-ftp-user
+FTP_PASSWORD=your-ftp-password
+FTP_REMOTE_PATH=/data_komputer/
+```
 
 | Variabel | Default | Deskripsi |
-|---|---|---|
+|----------|---------|-----------|
 | `PORT` | `3000` | Port server |
+| `SESSION_SECRET` | random | Secret key untuk session |
 | `VNC_PATH` | `...vnc\x64\vncviewer.exe` | Path UltraVNC Viewer |
-
-Bisa juga diset via environment variable, contoh:
-```bash
-$env:VNC_PATH="C:\Program Files\UltraVNC\vncviewer.exe"
-npm start
-```
+| `FTP_HOST` | - | Host FTP untuk sync data |
+| `FTP_USER` | - | User FTP |
+| `FTP_PASSWORD` | - | Password FTP |
+| `FTP_REMOTE_PATH` | `/data_komputer/` | Path remote FTP |
 
 ---
 
-## 📦 Dependencies
+## Dependencies
 
 ```json
 {
-  "express": "web server",
-  "ejs": "template engine",
-  "cors": "cross-origin support",
-  "wake_on_lan": "kirim Magic Packet WOL"
+  "@novnc/novnc": "Web VNC client",
+  "axios": "HTTP client",
+  "basic-ftp": "FTP client",
+  "cors": "Cross-origin support",
+  "dotenv": "Environment variables",
+  "ejs": "Template engine",
+  "express": "Web server",
+  "express-session": "Session-based auth",
+  "multer": "File upload handling",
+  "node-cron": "Scheduled tasks",
+  "ping": "TCP ping",
+  "wake_on_lan": "Kirim Magic Packet WOL",
+  "ws": "WebSocket support"
 }
 ```
 
-Install: `npm install`
-
 ---
 
-## 📝 Catatan Penting
+## Catatan Penting
 
-- ⚠️ **Jangan format file `.ejs` dengan auto-formatter HTML** (Prettier/Beautify di VS Code), karena akan merusak sintaks EJS tag `<% %>`. Set file `.ejs` ke mode **Plain Text** di VS Code.
-- UltraVNC Server harus sudah aktif di komputer target agar Remote Desktop berhasil terhubung.
-- WOL hanya bekerja jika komputer target sudah dikonfigurasi untuk menerima Magic Packet (aktifkan di BIOS/UEFI dan Network Adapter).
+- Jangan format file `.ejs` dengan auto-formatter HTML (Prettier/Beautify), karena akan merusak sintaks EJS
+- WMI Remote membutuhkan account Administrator di client dan `LocalAccountTokenFilterPolicy=1`
+- Screenshot monitoring hanya bekerja jika ada user yang login di PC client
+- WOL hanya bekerja jika komputer target sudah dikonfigurasi di BIOS/UEFI dan Network Adapter

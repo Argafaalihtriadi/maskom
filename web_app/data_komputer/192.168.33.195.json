@@ -1,0 +1,86 @@
+{
+    "User Session (Whoami)": {
+        "Username": "PICKING-TES",
+        "Hostname": "DESKTOP-PNOSUBJ",
+        "Full Identity": "DESKTOP-PNOSUBJ\\PICKING-TES"
+    },
+    "Sistem Operasi": "Windows 10 (64bit)",
+    "CPU": {
+        "Name": "Pentium(R) CPU G3240",
+        "Code Name": "Unknown",
+        "Package": "Unknown",
+        "Specification": "Intel(R) Pentium(R) CPU G3240 @ 3.10GHz",
+        "Core Speed": "3100.0 MHz",
+        "Cores": 2,
+        "Threads": 2
+    },
+    "Mainboard": {
+        "Motherboard Manufacturer": "Wearnes",
+        "Model": "8810L-A1",
+        "Version": "1.0",
+        "BIOS Vendor": "American Megatrends Inc.",
+        "BIOS Version": "V1.8",
+        "BIOS Date": "12/30/2014"
+    },
+    "Memory & SPD": {
+        "General": {
+            "Type": "DDR3",
+            "Total Size": "3.88 GB",
+            "Channel #": "Single",
+            "DRAM Frequency": "1600 MHz"
+        },
+        "SPD (Detail per Slot)": [
+            {
+                "Slot/Keping": "Slot #1",
+                "Ukuran (Size)": "2 GB",
+                "Merk/Manufaktur": "Samsung",
+                "Part Number": "M378B5773SB0-CK0",
+                "Max Bandwidth/Speed": "1600 MHz"
+            }
+        ]
+    },
+    "Graphics": [
+        {
+            "Name/Model": "Intel(R) HD Graphics",
+            "Dedicated VRAM": "1024 MB",
+            "Driver Version": "20.19.15.4624"
+        }
+    ],
+    "Penyimpanan": [
+        {
+            "Model/Nama Drive": "ST500DM002-1ER14C",
+            "Tipe Interfasi": "HDD Mechanical Drive",
+            "Koneksi Bus": "SATA",
+            "Kapasitas": "465.76 GB",
+            "Estimasi Batas Speed": "Up to 100 - 150 MB/s"
+        }
+    ],
+    "LAN/Network Card": [
+        {
+            "Description (Nama Perangkat)": "Realtek PCIe GbE Family Controller",
+            "Merk/Manufaktur": "Unknown",
+            "Kategori Perangkat": "LAN / Ethernet Card (Kabel)",
+            "Status Hardware": "Connected (Terhubung)",
+            "Physical Address (MAC)": "4C:CC:6A:06:32:5D",
+            "IPv4 Address": "192.168.33.195",
+            "Subnet Mask": "255.255.255.0",
+            "Default Gateway": "192.168.33.254",
+            "DNS Servers": "fec0:0:0:ffff::1%1"
+        },
+        {
+            "Description (Nama Perangkat)": "D-Link DGE-528T Gigabit Ethernet Adapter",
+            "Merk/Manufaktur": "Realtek",
+            "Kategori Perangkat": "LAN / Ethernet Card (Kabel)",
+            "Status Hardware": "Connected (Terhubung)",
+            "Physical Address (MAC)": "00:AD:24:8F:EE:04",
+            "IPv4 Address": "172.31.31.195",
+            "Subnet Mask": "255.255.0.0",
+            "Default Gateway": "Unknown",
+            "DNS Servers": "fec0:0:0:ffff::1%1"
+        }
+    ],
+    "DAT": "",
+    "Serial Number": "",
+    "Departemen": "WAREHOUSE",
+    "Pengguna": "ZONA 18"
+}

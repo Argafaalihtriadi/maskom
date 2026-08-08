@@ -5,6 +5,10 @@ REM  Launcher untuk Setup-WOL.ps1 - otomatis minta akses Administrator (UAC)
 REM  dan menjalankan script PowerShell tanpa perlu setting execution policy
 REM  manual.
 REM
+REM  Mengkonfigurasi:
+REM    1. Wake-on-LAN (NIC Power Management, Magic Packet, Fast Startup)
+REM    2. Remote Shutdown Support (Firewall SMB, Remote UAC, Remote Registry)
+REM
 REM  Cara pakai:
 REM    - Taruh file .bat ini di folder YANG SAMA dengan Setup-WOL.ps1
 REM    - Double-click file ini

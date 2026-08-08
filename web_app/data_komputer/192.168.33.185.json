@@ -1,0 +1,82 @@
+{
+    "User Session (Whoami)": {
+        "Username": "MEETING",
+        "Hostname": "MEETING",
+        "Full Identity": "MEETING\\MEETING"
+    },
+    "Sistem Operasi": "Windows 11 (64bit)",
+    "CPU": {
+        "Name": "Core(TM) i5-7500 CPU",
+        "Code Name": "Unknown",
+        "Package": "Socket 1151 LGA",
+        "Specification": "Intel(R) Core(TM) i5-7500 CPU @ 3.40GHz",
+        "Core Speed": "3401.0 MHz",
+        "Cores": 4,
+        "Threads": 4
+    },
+    "Mainboard": {
+        "Motherboard Manufacturer": "",
+        "Model": "Default String (System Model: TACTICAL)",
+        "Version": "Rev 1.0",
+        "BIOS Vendor": "American Megatrends Inc.",
+        "BIOS Version": "4212",
+        "BIOS Date": "07/24/2019"
+    },
+    "Memory & SPD": {
+        "General": {
+            "Type": "DDR4",
+            "Total Size": "3.87 GB",
+            "Channel #": "Single",
+            "DRAM Frequency": "2400 MHz"
+        },
+        "SPD (Detail per Slot)": [
+            {
+                "Slot/Keping": "Slot #1",
+                "Ukuran (Size)": "4 GB",
+                "Merk/Manufaktur": "0A94",
+                "Part Number": "D4R4GL24A16R",
+                "Max Bandwidth/Speed": "2400 MHz"
+            }
+        ]
+    },
+    "Graphics": [
+        {
+            "Name/Model": "Intel(R) HD Graphics 630",
+            "Dedicated VRAM": "1024 MB",
+            "Driver Version": "31.0.101.2141"
+        }
+    ],
+    "Penyimpanan": [
+        {
+            "Model/Nama Drive": "V-GEN03HG25HS128HY",
+            "Tipe Interfasi": "SSD SATA",
+            "Koneksi Bus": "SATA",
+            "Kapasitas": "119.24 GB",
+            "Estimasi Batas Speed": "Up to 550 MB/s"
+        }
+    ],
+    "LAN/Network Card": [
+        {
+            "Description (Nama Perangkat)": "DGE-560T Gigabit PCI Express Ethernet Adapter",
+            "Merk/Manufaktur": "D-Link",
+            "Kategori Perangkat": "LAN / Ethernet Card (Kabel)",
+            "Status Hardware": "Media Disconnected (Kabel Cabut)",
+            "Physical Address (MAC)": "58:D5:6E:3F:6E:40",
+            "IPv4 Address": "Disconnected / No IP",
+            "Subnet Mask": "Unknown",
+            "Default Gateway": "Unknown",
+            "DNS Servers": "Unknown"
+        },
+        {
+            "Description (Nama Perangkat)": "Realtek PCIe GbE Family Controller",
+            "Merk/Manufaktur": "Unknown",
+            "Kategori Perangkat": "LAN / Ethernet Card (Kabel)",
+            "Status Hardware": "Connected (Terhubung)",
+            "Physical Address (MAC)": "A8:5E:45:E7:79:6F",
+            "IPv4 Address": "192.168.33.185",
+            "Subnet Mask": "255.255.255.0",
+            "Default Gateway": "192.168.33.254",
+            "DNS Servers": "192.168.132.215, 192.168.32.155"
+        }
+    ]
+}

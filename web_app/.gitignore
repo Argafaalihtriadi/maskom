@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Environment & credentials — JANGAN commit!
+.env
+
+# Build output
+dist/
+build/
+
+# Log files
+*.log
+ftp_sync.log
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,801 @@
+<%- include('partials/header', { title: 'Folder Deployer', activePage: 'deployer' }) %>
+
+<style>
+/* =============================================
+   FOLDER DEPLOYER — Page Styles
+   ============================================= */
+.deployer-grid {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 20px;
+    align-items: start;
+}
+@media (max-width: 1100px) {
+    .deployer-grid { grid-template-columns: 1fr; }
+}
+
+/* Cards */
+.d-card {
+    background: #fff;
+    border: 1px solid #c7c4d7;
+    border-radius: 12px;
+    overflow: hidden;
+}
+.d-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 20px;
+    border-bottom: 1px solid #eceef0;
+    background: linear-gradient(135deg, #f7f9fb 0%, #f0f0ff 100%);
+}
+.d-card-header .icon {
+    width: 36px; height: 36px;
+    background: #494bd6;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; flex-shrink: 0;
+}
+.d-card-header h2 {
+    font-size: 14px; font-weight: 600; color: #191c1e; margin: 0;
+}
+.d-card-header p {
+    font-size: 11px; color: #464554; margin: 2px 0 0;
+}
+.d-card-body { padding: 20px; }
+
+/* Form elements */
+.form-group { margin-bottom: 16px; }
+.form-group label {
+    display: block;
+    font-size: 12px; font-weight: 600;
+    color: #464554;
+    margin-bottom: 6px;
+    text-transform: uppercase; letter-spacing: 0.04em;
+}
+.form-group input[type="text"],
+.form-group select,
+.form-group input[type="file"] {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid #c7c4d7;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #191c1e;
+    background: #f7f9fb;
+    transition: border-color 0.15s;
+    box-sizing: border-box;
+}
+.form-group input:focus, .form-group select:focus {
+    outline: none;
+    border-color: #494bd6;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(73,75,214,0.08);
+}
+.form-group .hint {
+    font-size: 11px; color: #767586; margin-top: 4px;
+}
+
+/* Upload zone */
+.upload-zone {
+    border: 2px dashed #c7c4d7;
+    border-radius: 10px;
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #fafbff;
+}
+.upload-zone:hover, .upload-zone.dragover {
+    border-color: #494bd6;
+    background: #f0f0ff;
+}
+.upload-zone .uz-icon { font-size: 32px; color: #c7c4d7; margin-bottom: 8px; }
+.upload-zone:hover .uz-icon { color: #494bd6; }
+.upload-zone p { font-size: 12px; color: #767586; margin: 0; }
+.upload-zone strong { color: #494bd6; }
+#fileInput { display: none; }
+
+/* File list */
+.file-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid #eceef0;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: #f7f9fb;
+}
+.file-item:hover { border-color: #494bd6; background: #f0f0ff; }
+.file-item.selected { border-color: #494bd6; background: #f0f0ff; box-shadow: 0 0 0 2px rgba(73,75,214,0.15); }
+.file-item .fi-icon { color: #494bd6; flex-shrink: 0; }
+.file-item .fi-name { font-size: 12px; font-weight: 500; color: #191c1e; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-item .fi-size { font-size: 11px; color: #767586; flex-shrink: 0; }
+.file-item .fi-select { width: 16px; height: 16px; border-radius: 4px; border: 2px solid #c7c4d7; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.file-item.selected .fi-select { background: #494bd6; border-color: #494bd6; color: #fff; font-size: 10px; }
+
+/* PC List (target selector) */
+.pc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px;
+}
+.pc-card {
+    border: 1px solid #c7c4d7;
+    border-radius: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: #f7f9fb;
+    position: relative;
+    user-select: none;
+}
+.pc-card:hover { border-color: #494bd6; background: #f0f0ff; }
+.pc-card.selected { border-color: #494bd6; background: #f0f0ff; box-shadow: 0 0 0 2px rgba(73,75,214,0.15); }
+.pc-card .pc-status { width: 8px; height: 8px; border-radius: 50%; background: #22C55E; display: inline-block; margin-right: 5px; }
+.pc-card .pc-status.offline { background: #EF4444; }
+.pc-card .pc-hostname { font-size: 12px; font-weight: 600; color: #191c1e; margin-top: 4px; }
+.pc-card .pc-ip { font-size: 11px; color: #767586; }
+.pc-card .pc-check {
+    position: absolute; top: 6px; right: 6px;
+    width: 16px; height: 16px;
+    border-radius: 4px; border: 2px solid #c7c4d7;
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: #fff;
+    transition: 0.15s;
+}
+.pc-card.selected .pc-check { background: #494bd6; border-color: #494bd6; }
+
+/* Log terminal */
+.deploy-log {
+    background: #0f1117;
+    border-radius: 10px;
+    padding: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: #e2e8f0;
+    max-height: 320px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+.deploy-log .log-time { color: #64748b; }
+.deploy-log .log-success { color: #4ade80; }
+.deploy-log .log-error { color: #f87171; }
+.deploy-log .log-info { color: #60a5fa; }
+.deploy-log .log-warn { color: #fb923c; }
+
+/* Progress table */
+.prog-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.prog-table th {
+    text-align: left; padding: 8px 12px;
+    background: #f0f0ff; color: #494bd6;
+    font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+    border-bottom: 1px solid #e0e0f0;
+}
+.prog-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #eceef0;
+    color: #191c1e;
+    vertical-align: middle;
+}
+.prog-table tr:last-child td { border-bottom: none; }
+.prog-table tr:hover td { background: #fafaff; }
+
+/* Status badges */
+.badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 999px;
+    font-size: 11px; font-weight: 600;
+}
+.badge-waiting  { background: #f1f5f9; color: #64748b; }
+.badge-sending  { background: #dbeafe; color: #2563eb; }
+.badge-downloading { background: #fef3c7; color: #d97706; animation: pulse 1.5s infinite; }
+.badge-extracting  { background: #ede9fe; color: #7c3aed; animation: pulse 1.5s infinite; }
+.badge-running  { background: #d1fae5; color: #059669; animation: pulse 1.5s infinite; }
+.badge-success  { background: #dcfce7; color: #16a34a; }
+.badge-error    { background: #fee2e2; color: #dc2626; }
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.6; }
+}
+
+/* Buttons */
+.btn-primary {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 10px 20px;
+    background: #494bd6; color: #fff;
+    border: none; border-radius: 8px;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: 0.15s;
+}
+.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(73,75,214,0.3); }
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.btn-outline {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px;
+    background: transparent; color: #494bd6;
+    border: 1px solid #494bd6; border-radius: 8px;
+    font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: 0.15s;
+}
+.btn-outline:hover { background: #f0f0ff; }
+
+.btn-danger-sm {
+    padding: 4px 10px;
+    background: transparent; color: #EF4444;
+    border: 1px solid #EF444440; border-radius: 6px;
+    font-size: 11px; font-weight: 500;
+    cursor: pointer; transition: 0.15s;
+}
+.btn-danger-sm:hover { background: #fef2f2; }
+
+/* Alert */
+.alert-info {
+    background: #eff6ff; border: 1px solid #bfdbfe;
+    border-radius: 8px; padding: 10px 14px;
+    font-size: 12px; color: #1e40af;
+    display: flex; align-items: flex-start; gap: 8px;
+}
+.alert-warn {
+    background: #fffbeb; border: 1px solid #fde68a;
+    border-radius: 8px; padding: 10px 14px;
+    font-size: 12px; color: #92400e;
+    display: flex; align-items: flex-start; gap: 8px;
+}
+</style>
+
+<!-- Header -->
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+    <div>
+        <h1 style="font-size:22px; font-weight:700; color:#191c1e; margin:0;">Folder Deployer</h1>
+        <p style="font-size:13px; color:#464554; margin:4px 0 0;">Kirim folder program (.zip) dan jalankan file .exe ke PC klien secara massal via WebSocket.</p>
+    </div>
+    <div style="display:flex; gap:8px; align-items:center;">
+        <div id="agentCountBadge" style="display:flex; align-items:center; gap:6px; background:#dcfce7; border:1px solid #bbf7d0; border-radius:999px; padding:6px 14px; font-size:12px; font-weight:600; color:#16a34a;">
+            <span class="material-symbols-outlined" style="font-size:16px;">wifi</span>
+            <span id="agentCountText">Memuat...</span>
+        </div>
+        <button class="btn-outline" onclick="refreshAgents()">
+            <span class="material-symbols-outlined" style="font-size:16px;">refresh</span>
+            Refresh
+        </button>
+    </div>
+</div>
+
+<div class="deployer-grid">
+    <!-- ===== PANEL KIRI: Config Deploy ===== -->
+    <div style="display:flex; flex-direction:column; gap:16px;">
+
+        <!-- Upload File -->
+        <div class="d-card">
+            <div class="d-card-header">
+                <div class="icon"><span class="material-symbols-outlined" style="font-size:18px;">upload_file</span></div>
+                <div>
+                    <h2>1. Unggah File Program (.zip)</h2>
+                    <p>Kompresi folder program Anda menjadi .zip sebelum diunggah</p>
+                </div>
+            </div>
+            <div class="d-card-body">
+                <!-- Drop zone -->
+                <div class="upload-zone" id="uploadZone">
+                    <div class="uz-icon"><span class="material-symbols-outlined" style="font-size:36px;">folder_zip</span></div>
+                    <p>Seret & lepas file <strong>.zip</strong> ke sini, atau</p>
+                    <p style="margin-top:6px;"><strong onclick="document.getElementById('fileInput').click()" style="cursor:pointer; font-size:13px;">Klik untuk memilih file</strong></p>
+                    <input type="file" id="fileInput" accept=".zip" />
+                </div>
+
+                <!-- Upload progress -->
+                <div id="uploadProgress" style="display:none; margin-top:12px;">
+                    <div style="display:flex; justify-content:space-between; font-size:11px; color:#767586; margin-bottom:4px;">
+                        <span id="uploadFilename">Mengunggah...</span>
+                        <span id="uploadPercent">0%</span>
+                    </div>
+                    <div style="height:4px; background:#eceef0; border-radius:999px; overflow:hidden;">
+                        <div id="uploadBar" style="height:100%; background:#494bd6; width:0%; transition:width 0.3s;"></div>
+                    </div>
+                </div>
+
+                <!-- File list yang sudah ada di server -->
+                <div style="margin-top:16px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <p style="font-size:11px; font-weight:600; color:#464554; text-transform:uppercase; letter-spacing:0.04em; margin:0;">File di Server</p>
+                        <button class="btn-danger-sm" onclick="clearAllFiles()" id="clearAllBtn">Hapus Semua</button>
+                    </div>
+                    <div id="serverFileList">
+                        <p style="font-size:12px; color:#767586; text-align:center; padding:16px 0;">Memuat daftar file...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Konfigurasi Eksekusi -->
+        <div class="d-card">
+            <div class="d-card-header">
+                <div class="icon"><span class="material-symbols-outlined" style="font-size:18px;">settings</span></div>
+                <div>
+                    <h2>2. Konfigurasi Eksekusi</h2>
+                    <p>Tentukan file .exe yang akan dijalankan setelah diekstrak</p>
+                </div>
+            </div>
+            <div class="d-card-body">
+                <div class="form-group">
+                    <label>File ZIP yang Dipilih</label>
+                    <input type="text" id="selectedZipName" placeholder="Pilih file dari daftar di atas..." readonly
+                           style="background:#f0f0ff; cursor:pointer;" onclick="document.getElementById('serverFileList').scrollIntoView({behavior:'smooth'})">
+                </div>
+                <div class="form-group">
+                    <label>Path File .exe (di dalam ZIP)</label>
+                    <input type="text" id="execPath" placeholder="Contoh: MyApp/launcher.exe">
+                    <p class="hint">Path relatif dari dalam arsip .zip. Contoh: jika ZIP berisi folder <code>MyApp/</code> dan di dalamnya ada <code>start.exe</code>, isi dengan <code>MyApp/start.exe</code></p>
+                </div>
+                <div class="form-group">
+                    <label>Argumen Tambahan (opsional)</label>
+                    <input type="text" id="execArgs" placeholder="Contoh: --silent --no-gui">
+                    <p class="hint">Argumen command line yang diteruskan saat menjalankan .exe</p>
+                </div>
+                <div class="form-group">
+                    <label>Folder Ekstraksi di Klien (opsional)</label>
+                    <input type="text" id="extractRoot" placeholder="Default: C:\MaskomDeploy">
+                    <p class="hint">Folder tujuan ekstraksi di komputer klien. Biarkan kosong untuk menggunakan default.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ===== PANEL KANAN: Target PC & Log ===== -->
+    <div style="display:flex; flex-direction:column; gap:16px;">
+
+        <!-- Pilih PC Target -->
+        <div class="d-card">
+            <div class="d-card-header">
+                <div class="icon"><span class="material-symbols-outlined" style="font-size:18px;">monitor</span></div>
+                <div>
+                    <h2>3. Pilih PC Target</h2>
+                    <p>Hanya PC yang agennya online (WebSocket terhubung) yang dapat menerima file</p>
+                </div>
+            </div>
+            <div class="d-card-body">
+                <div style="display:flex; gap:8px; margin-bottom:12px; align-items:center; flex-wrap:wrap;">
+                    <button class="btn-outline" style="font-size:11px; padding:6px 12px;" onclick="selectAllPC()">
+                        <span class="material-symbols-outlined" style="font-size:14px;">select_all</span> Pilih Semua
+                    </button>
+                    <button class="btn-outline" style="font-size:11px; padding:6px 12px; color:#464554; border-color:#c7c4d7;" onclick="deselectAllPC()">
+                        <span class="material-symbols-outlined" style="font-size:14px;">deselect</span> Batal Semua
+                    </button>
+                    <span id="selectedPcCount" style="font-size:12px; color:#767586; margin-left:auto;">0 PC dipilih</span>
+                </div>
+
+                <div class="alert-info" style="margin-bottom:14px;">
+                    <span class="material-symbols-outlined" style="font-size:16px; flex-shrink:0; margin-top:1px;">info</span>
+                    <span>PC yang muncul di sini adalah yang sudah menjalankan agen <code>main.exe --daemon</code> dan berhasil terhubung ke server ini via WebSocket.</span>
+                </div>
+
+                <div class="pc-grid" id="pcGrid">
+                    <p style="font-size:12px; color:#767586; grid-column:1/-1; text-align:center; padding:20px 0;">Memuat daftar agen online...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tombol Deploy -->
+        <div class="d-card">
+            <div class="d-card-body" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                <button class="btn-primary" id="btnDeploy" onclick="startDeploy()" disabled>
+                    <span class="material-symbols-outlined">rocket_launch</span>
+                    Deploy ke PC Terpilih
+                </button>
+                <div style="flex:1; font-size:12px; color:#767586;" id="deployReadyInfo">
+                    Lengkapi konfigurasi dan pilih PC target untuk memulai.
+                </div>
+            </div>
+        </div>
+
+        <!-- Log & Progress -->
+        <div class="d-card">
+            <div class="d-card-header">
+                <div class="icon" style="background:#0f172a;"><span class="material-symbols-outlined" style="font-size:18px;">terminal</span></div>
+                <div>
+                    <h2>Log & Status Deploy</h2>
+                    <p>Progres pengiriman dan eksekusi file per PC</p>
+                </div>
+            </div>
+            <div class="d-card-body" style="padding-top:0;">
+
+                <!-- Progress table -->
+                <div style="margin-bottom:16px; overflow-x:auto;">
+                    <table class="prog-table" id="progressTable">
+                        <thead>
+                            <tr>
+                                <th>PC / Hostname</th>
+                                <th>IP</th>
+                                <th>Status</th>
+                                <th>Keterangan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="progressBody">
+                            <tr><td colspan="4" style="text-align:center; color:#767586; padding:20px;">Belum ada operasi deploy yang dilakukan.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Terminal log -->
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <p style="font-size:11px; font-weight:600; color:#464554; text-transform:uppercase; letter-spacing:0.04em; margin:0;">Log Terminal</p>
+                    <button onclick="clearLog()" style="font-size:11px; color:#767586; background:none; border:none; cursor:pointer;">Bersihkan</button>
+                </div>
+                <div class="deploy-log" id="deployLog"><span class="log-info">// Log deploy akan muncul di sini...</span>
+</div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+let selectedZip    = null;
+let selectedPCs    = new Set();
+let agentList      = [];
+let deployProgress = {}; // hostname -> status info
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+    loadServerFiles();
+    refreshAgents();
+
+    // Auto-refresh agen setiap 10 detik
+    setInterval(refreshAgents, 10000);
+
+    // Upload zone drag & drop
+    const zone   = document.getElementById('uploadZone');
+    const input  = document.getElementById('fileInput');
+
+    zone.addEventListener('click', () => input.click());
+    zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+    zone.addEventListener('drop', (e) => {
+        e.preventDefault(); zone.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file) uploadFile(file);
+    });
+    input.addEventListener('change', () => {
+        if (input.files[0]) uploadFile(input.files[0]);
+    });
+
+    // Watch form inputs untuk enable tombol deploy
+    ['execPath', 'selectedZipName'].forEach(id => {
+        document.getElementById(id).addEventListener('input', checkDeployReady);
+    });
+});
+
+// ============================================================
+// LOAD FILE LIST FROM SERVER
+// ============================================================
+async function loadServerFiles() {
+    try {
+        const res  = await fetch('/api/remote/upload-files');
+        const data = await res.json();
+        renderFileList(data.files || []);
+    } catch (e) {
+        document.getElementById('serverFileList').innerHTML =
+            `<p style="font-size:12px; color:#EF4444; text-align:center; padding:10px 0;">Gagal memuat daftar file.</p>`;
+    }
+}
+
+function renderFileList(files) {
+    const container = document.getElementById('serverFileList');
+    if (!files.length) {
+        container.innerHTML = `<p style="font-size:12px; color:#767586; text-align:center; padding:16px 0;">Belum ada file. Unggah file .zip di atas.</p>`;
+        return;
+    }
+    container.innerHTML = files.map(f => {
+        const isZip = f.toLowerCase().endsWith('.zip');
+        const icon  = isZip ? 'folder_zip' : 'description';
+        return `<div class="file-item ${selectedZip === f ? 'selected' : ''}" onclick="selectFile('${f}')" id="fi-${CSS.escape(f)}">
+            <span class="material-symbols-outlined fi-icon">${icon}</span>
+            <span class="fi-name" title="${f}">${f}</span>
+            <div class="fi-select">${selectedZip === f ? '✓' : ''}</div>
+        </div>`;
+    }).join('');
+}
+
+function selectFile(name) {
+    selectedZip = name;
+    document.getElementById('selectedZipName').value = name;
+    loadServerFiles(); // re-render untuk highlight
+    checkDeployReady();
+    log(`File dipilih: <span class="log-info">${name}</span>`);
+}
+
+// ============================================================
+// UPLOAD FILE
+// ============================================================
+async function uploadFile(file) {
+    if (!file.name.toLowerCase().endsWith('.zip')) {
+        alert('Hanya file .zip yang diizinkan!');
+        return;
+    }
+
+    const prog    = document.getElementById('uploadProgress');
+    const bar     = document.getElementById('uploadBar');
+    const pct     = document.getElementById('uploadPercent');
+    const fname   = document.getElementById('uploadFilename');
+
+    prog.style.display  = 'block';
+    fname.textContent   = file.name;
+    bar.style.width     = '0%';
+    pct.textContent     = '0%';
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/remote/upload-file');
+
+    xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+            const p = Math.round((e.loaded / e.total) * 100);
+            bar.style.width  = p + '%';
+            pct.textContent  = p + '%';
+        }
+    };
+
+    xhr.onload = () => {
+        prog.style.display = 'none';
+        if (xhr.status === 200) {
+            log(`Upload selesai: <span class="log-success">${file.name}</span>`);
+            loadServerFiles();
+            selectFile(file.name);
+        } else {
+            log(`Upload gagal: <span class="log-error">${file.name}</span>`);
+        }
+    };
+
+    xhr.onerror = () => {
+        prog.style.display = 'none';
+        log(`<span class="log-error">Error koneksi saat upload ${file.name}.</span>`);
+    };
+
+    xhr.send(formData);
+    log(`Mengupload <span class="log-info">${file.name}</span> (${(file.size/1024/1024).toFixed(1)} MB)...`);
+}
+
+// ============================================================
+// LOAD AGENT LIST (ONLINE PCs)
+// ============================================================
+async function refreshAgents() {
+    try {
+        const res  = await fetch('/api/agents');
+        const data = await res.json();
+        agentList  = data.agents || [];
+        renderPcGrid();
+        updateAgentCount();
+    } catch (e) {
+        document.getElementById('agentCountText').textContent = 'Gagal terhubung';
+    }
+}
+
+function renderPcGrid() {
+    const grid = document.getElementById('pcGrid');
+    if (!agentList.length) {
+        grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:24px 0; color:#767586; font-size:13px;">
+            <span class="material-symbols-outlined" style="font-size:40px; display:block; margin-bottom:8px; color:#c7c4d7;">wifi_off</span>
+            Tidak ada agen yang terhubung.<br>
+            <span style="font-size:11px;">Pastikan <code>main.exe --daemon</code> berjalan di PC klien.</span>
+        </div>`;
+        return;
+    }
+
+    grid.innerHTML = agentList.map(agent => {
+        const sel = selectedPCs.has(agent.hostname);
+        return `<div class="pc-card ${sel ? 'selected' : ''}" onclick="togglePC('${agent.hostname}')" id="pc-${agent.hostname}">
+            <div class="pc-check">${sel ? '✓' : ''}</div>
+            <div><span class="pc-status"></span><span style="font-size:10px; color:#22C55E; font-weight:600;">Online</span></div>
+            <div class="pc-hostname">${agent.hostname}</div>
+            <div class="pc-ip">${agent.ip}</div>
+        </div>`;
+    }).join('');
+}
+
+function updateAgentCount() {
+    const badge = document.getElementById('agentCountBadge');
+    const text  = document.getElementById('agentCountText');
+    text.textContent = `${agentList.length} Agen Online`;
+    if (agentList.length === 0) {
+        badge.style.background    = '#fee2e2';
+        badge.style.borderColor   = '#fecaca';
+        badge.style.color         = '#dc2626';
+    } else {
+        badge.style.background    = '#dcfce7';
+        badge.style.borderColor   = '#bbf7d0';
+        badge.style.color         = '#16a34a';
+    }
+}
+
+// ============================================================
+// PC SELECTION
+// ============================================================
+function togglePC(hostname) {
+    if (selectedPCs.has(hostname)) {
+        selectedPCs.delete(hostname);
+    } else {
+        selectedPCs.add(hostname);
+    }
+    renderPcGrid();
+    updateSelectedCount();
+    checkDeployReady();
+}
+
+function selectAllPC() {
+    agentList.forEach(a => selectedPCs.add(a.hostname));
+    renderPcGrid();
+    updateSelectedCount();
+    checkDeployReady();
+}
+
+function deselectAllPC() {
+    selectedPCs.clear();
+    renderPcGrid();
+    updateSelectedCount();
+    checkDeployReady();
+}
+
+function updateSelectedCount() {
+    document.getElementById('selectedPcCount').textContent = `${selectedPCs.size} PC dipilih`;
+}
+
+// ============================================================
+// DEPLOY READINESS CHECK
+// ============================================================
+function checkDeployReady() {
+    const zipOk  = !!selectedZip;
+    const execOk = !!document.getElementById('execPath').value.trim();
+    const pcOk   = selectedPCs.size > 0;
+    const btn    = document.getElementById('btnDeploy');
+    const info   = document.getElementById('deployReadyInfo');
+
+    btn.disabled = !(zipOk && execOk && pcOk);
+
+    if (!zipOk)  info.textContent = '⚠ Pilih file .zip dari daftar.';
+    else if (!execOk) info.textContent = '⚠ Isi path file .exe di dalam ZIP.';
+    else if (!pcOk)   info.textContent = '⚠ Pilih setidaknya satu PC target.';
+    else info.textContent = `✅ Siap deploy "${selectedZip}" ke ${selectedPCs.size} PC.`;
+}
+
+// ============================================================
+// START DEPLOY
+// ============================================================
+async function startDeploy() {
+    const zipName    = selectedZip;
+    const execPath   = document.getElementById('execPath').value.trim();
+    const execArgs   = document.getElementById('execArgs').value.trim();
+    const extractRoot = document.getElementById('extractRoot').value.trim() || null;
+
+    if (!zipName || !execPath || selectedPCs.size === 0) return;
+
+    const btn = document.getElementById('btnDeploy');
+    btn.disabled    = true;
+    btn.innerHTML   = '<span class="material-symbols-outlined" style="animation:spin 1s linear infinite">sync</span> Mengirim...';
+
+    const hostnames = Array.from(selectedPCs);
+    log(`\n<span class="log-info">━━━ Deploy dimulai ━━━</span>`);
+    log(`ZIP   : <span class="log-info">${zipName}</span>`);
+    log(`EXE   : <span class="log-info">${execPath}</span>`);
+    log(`Target: <span class="log-info">${hostnames.join(', ')}</span>`);
+
+    // Inisialisasi tabel progres
+    hostnames.forEach(h => {
+        const agent = agentList.find(a => a.hostname === h);
+        deployProgress[h] = { status: 'sending', ip: agent ? agent.ip : '-', message: 'Mengirim perintah...' };
+    });
+    renderProgressTable();
+
+    try {
+        const res  = await fetch('/api/agent/deploy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ hostnames, zip_name: zipName, exec_path: execPath, exec_args: execArgs, extract_root: extractRoot })
+        });
+        const data = await res.json();
+
+        log(data.success ? `<span class="log-success">✓ ${data.message}</span>` : `<span class="log-error">✗ ${data.message}</span>`);
+
+        if (data.sent && data.sent.length > 0) {
+            data.sent.forEach(h => {
+                deployProgress[h] = { ...deployProgress[h], status: 'downloading', message: 'Mengunduh di klien...' };
+            });
+        }
+        if (data.offline && data.offline.length > 0) {
+            data.offline.forEach(h => {
+                deployProgress[h] = { ...deployProgress[h], status: 'error', message: 'PC tidak online / agen tidak terhubung.' };
+            });
+        }
+        renderProgressTable();
+
+    } catch (err) {
+        log(`<span class="log-error">Gagal mengirim perintah: ${err.message}</span>`);
+    }
+
+    btn.disabled   = false;
+    btn.innerHTML  = '<span class="material-symbols-outlined">rocket_launch</span> Deploy ke PC Terpilih';
+}
+
+// ============================================================
+// RENDER PROGRESS TABLE
+// ============================================================
+function renderProgressTable() {
+    const tbody = document.getElementById('progressBody');
+    const rows  = Object.entries(deployProgress);
+
+    if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#767586; padding:20px;">Belum ada operasi deploy.</td></tr>';
+        return;
+    }
+
+    const statusMap = {
+        sending:     '<span class="badge badge-sending">Mengirim</span>',
+        downloading: '<span class="badge badge-downloading">⬇ Mengunduh</span>',
+        extracting:  '<span class="badge badge-extracting">📦 Mengekstrak</span>',
+        running:     '<span class="badge badge-running">▶ Menjalankan</span>',
+        success:     '<span class="badge badge-success">✓ Sukses</span>',
+        error:       '<span class="badge badge-error">✗ Error</span>',
+        waiting:     '<span class="badge badge-waiting">Menunggu</span>',
+    };
+
+    tbody.innerHTML = rows.map(([hostname, info]) => `
+        <tr>
+            <td style="font-weight:600;">${hostname}</td>
+            <td style="font-family:monospace; font-size:11px;">${info.ip || '-'}</td>
+            <td>${statusMap[info.status] || info.status}</td>
+            <td style="color:#464554; font-size:11px;">${info.message || ''}</td>
+        </tr>
+    `).join('');
+}
+
+// ============================================================
+// LOG HELPERS
+// ============================================================
+function log(msg) {
+    const el = document.getElementById('deployLog');
+    const now = new Date().toLocaleTimeString('id-ID');
+    el.innerHTML += `\n<span class="log-time">[${now}]</span> ${msg}`;
+    el.scrollTop = el.scrollHeight;
+}
+
+function clearLog() {
+    document.getElementById('deployLog').innerHTML = '<span class="log-info">// Log bersih.</span>';
+}
+
+// ============================================================
+// CLEAR ALL FILES
+// ============================================================
+async function clearAllFiles() {
+    if (!confirm('Hapus semua file di folder upload server?')) return;
+    try {
+        const files = await fetch('/api/remote/upload-files').then(r => r.json()).then(d => d.files || []);
+        // File deletion tidak ada endpoint-nya, tampilkan info
+        log('<span class="log-warn">Fitur hapus file belum tersedia via API. Hapus manual di folder mulai_kerja/.</span>');
+    } catch (e) {}
+}
+
+// ============================================================
+// CSS animation for spinning icon
+// ============================================================
+const style = document.createElement('style');
+style.textContent = `@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`;
+document.head.appendChild(style);
+</script>
+
+<%- include('partials/footer') %>

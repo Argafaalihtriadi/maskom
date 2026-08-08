@@ -1,0 +1,75 @@
+{
+    "User Session (Whoami)": {
+        "Username": "PS BF",
+        "Hostname": "DESKTOP-QGOQR42",
+        "Full Identity": "DESKTOP-QGOQR42\\PS BF"
+    },
+    "Sistem Operasi": "Windows 10 (64bit)",
+    "CPU": {
+        "Name": "Pentium(R) CPU G4400",
+        "Code Name": "Unknown",
+        "Package": "Socket 1151 LGA",
+        "Specification": "Intel(R) Pentium(R) CPU G4400 @ 3.30GHz",
+        "Core Speed": "3300.0 MHz",
+        "Cores": 2,
+        "Threads": 2
+    },
+    "Mainboard": {
+        "Motherboard Manufacturer": "ASUSTeK COMPUTER INC.",
+        "Model": "H110M-C",
+        "Version": "Rev X.0x",
+        "BIOS Vendor": "American Megatrends Inc.",
+        "BIOS Version": "4001",
+        "BIOS Date": "11/22/2018"
+    },
+    "Memory & SPD": {
+        "General": {
+            "Type": "DDR4",
+            "Total Size": "3.87 GB",
+            "Channel #": "Single",
+            "DRAM Frequency": "2133 MHz"
+        },
+        "SPD (Detail per Slot)": [
+            {
+                "Slot/Keping": "Slot #1",
+                "Ukuran (Size)": "4 GB",
+                "Merk/Manufaktur": "SK Hynix",
+                "Part Number": "HMA851U6JJR6N-VK",
+                "Max Bandwidth/Speed": "2133 MHz"
+            }
+        ]
+    },
+    "Graphics": [
+        {
+            "Name/Model": "Intel(R) HD Graphics 510",
+            "Dedicated VRAM": "1024 MB",
+            "Driver Version": "31.0.101.2111"
+        }
+    ],
+    "Penyimpanan": [
+        {
+            "Model/Nama Drive": "ST500DM002-1ER14C",
+            "Tipe Interfasi": "HDD Mechanical Drive",
+            "Koneksi Bus": "SATA",
+            "Kapasitas": "465.76 GB",
+            "Estimasi Batas Speed": "Up to 100 - 150 MB/s"
+        }
+    ],
+    "LAN/Network Card": [
+        {
+            "Description (Nama Perangkat)": "Realtek PCIe GbE Family Controller",
+            "Merk/Manufaktur": "Realtek",
+            "Kategori Perangkat": "LAN / Ethernet Card (Kabel)",
+            "Status Hardware": "Connected (Terhubung)",
+            "Physical Address (MAC)": "04:D9:F5:82:9C:7D",
+            "IPv4 Address": "192.168.33.50",
+            "Subnet Mask": "255.255.255.0",
+            "Default Gateway": "192.168.33.254",
+            "DNS Servers": "Unknown"
+        }
+    ],
+    "DAT": "",
+    "Serial Number": "",
+    "Departemen": "WAREHOUSE",
+    "Pengguna": "ZONA 1 ST 2"
+}

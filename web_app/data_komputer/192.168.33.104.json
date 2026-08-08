@@ -1,0 +1,75 @@
+{
+    "User Session (Whoami)": {
+        "Username": "PICKING SCANNING",
+        "Hostname": "DESKTOP-E4DHE2O",
+        "Full Identity": "DESKTOP-E4DHE2O\\PICKING SCANNING"
+    },
+    "Sistem Operasi": "Windows 10 (64bit)",
+    "CPU": {
+        "Name": "Core(TM) i3-4150 CPU",
+        "Code Name": "Unknown",
+        "Package": "Socket 1150 LGA",
+        "Specification": "Intel(R) Core(TM) i3-4150 CPU @ 3.50GHz",
+        "Core Speed": "3500.0 MHz",
+        "Cores": 2,
+        "Threads": 4
+    },
+    "Mainboard": {
+        "Motherboard Manufacturer": "Wearnes",
+        "Model": "8810L-A1",
+        "Version": "1.0",
+        "BIOS Vendor": "American Megatrends Inc.",
+        "BIOS Version": "V1.8",
+        "BIOS Date": "12/30/2014"
+    },
+    "Memory & SPD": {
+        "General": {
+            "Type": "DDR3",
+            "Total Size": "3.88 GB",
+            "Channel #": "Single",
+            "DRAM Frequency": "1600 MHz"
+        },
+        "SPD (Detail per Slot)": [
+            {
+                "Slot/Keping": "Slot #1",
+                "Ukuran (Size)": "4 GB",
+                "Merk/Manufaktur": "1014",
+                "Part Number": "D3S4GL16A8",
+                "Max Bandwidth/Speed": "1600 MHz"
+            }
+        ]
+    },
+    "Graphics": [
+        {
+            "Name/Model": "Intel(R) HD Graphics 4400",
+            "Dedicated VRAM": "1024 MB",
+            "Driver Version": "20.19.15.4531"
+        }
+    ],
+    "Penyimpanan": [
+        {
+            "Model/Nama Drive": "WDC WD5000AZLX-00K2TA0",
+            "Tipe Interfasi": "HDD Mechanical Drive",
+            "Koneksi Bus": "SATA",
+            "Kapasitas": "465.76 GB",
+            "Estimasi Batas Speed": "Up to 100 - 150 MB/s"
+        }
+    ],
+    "LAN/Network Card": [
+        {
+            "Description (Nama Perangkat)": "Realtek PCIe GbE Family Controller",
+            "Merk/Manufaktur": "Realtek",
+            "Kategori Perangkat": "LAN / Ethernet Card (Kabel)",
+            "Status Hardware": "Connected (Terhubung)",
+            "Physical Address (MAC)": "4C:CC:6A:06:2D:DD",
+            "IPv4 Address": "192.168.33.104",
+            "Subnet Mask": "255.255.255.0",
+            "Default Gateway": "192.168.33.254",
+            "DNS Servers": "Unknown"
+        }
+    ],
+    "DAT": "",
+    "Serial Number": "",
+    "Departemen": "WAREHOUSE",
+    "Pengguna": "ZONA 6 ST 3"
+}

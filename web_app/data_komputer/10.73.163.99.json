@@ -1,0 +1,90 @@
+{
+    "User Session (Whoami)": {
+        "Username": "user",
+        "Hostname": "DESKTOP-U5ATD0L",
+        "Full Identity": "DESKTOP-U5ATD0L\\user"
+    },
+    "Sistem Operasi": "Windows 11 (64bit)",
+    "CPU": {
+        "Name": "Ryzen 7 6800H with Radeon Graphics",
+        "Code Name": "Unknown",
+        "Package": "Unknown",
+        "Specification": "AMD Ryzen 7 6800H with Radeon Graphics",
+        "Core Speed": "2508.0 MHz",
+        "Cores": 8,
+        "Threads": 16
+    },
+    "Mainboard": {
+        "Motherboard Manufacturer": "",
+        "Model": "",
+        "Version": "Rev 1.0",
+        "BIOS Vendor": "",
+        "BIOS Version": "",
+        "BIOS Date": ""
+    },
+    "Memory & SPD": {
+        "General": {
+            "Type": "DDR4",
+            "Total Size": "13.75 GB",
+            "Channel #": "Unknown",
+            "DRAM Frequency": "Unknown"
+        },
+        "SPD (Detail per Slot)": []
+    },
+    "Graphics": [],
+    "Penyimpanan": [
+        {
+            "Model/Nama Drive": "Wodposit NVME SSD",
+            "Tipe Interfasi": "SSD NVMe (PCIe High Speed)",
+            "Koneksi Bus": "NVMe",
+            "Kapasitas": "476.94 GB",
+            "Estimasi Batas Speed": "Up to 3500 - 7500 MB/s"
+        }
+    ],
+    "LAN/Network Card": [
+        {
+            "Description (Nama Perangkat)": "Microsoft Wi-Fi Direct Virtual Adapter",
+            "Merk/Manufaktur": "Unknown",
+            "Kategori Perangkat": "Wireless Wi-Fi Adapter",
+            "Status Hardware": "Disabled / Disconnected",
+            "Physical Address (MAC)": "3E:C5:DD:02:FD:86",
+            "IPv4 Address": "Disconnected / No IP",
+            "Subnet Mask": "Unknown",
+            "Default Gateway": "Unknown",
+            "DNS Servers": "Unknown"
+        },
+        {
+            "Description (Nama Perangkat)": "Microsoft Wi-Fi Direct Virtual Adapter #2",
+            "Merk/Manufaktur": "Unknown",
+            "Kategori Perangkat": "Wireless Wi-Fi Adapter",
+            "Status Hardware": "Disabled / Disconnected",
+            "Physical Address (MAC)": "3E:C5:DD:02:ED:96",
+            "IPv4 Address": "Disconnected / No IP",
+            "Subnet Mask": "Unknown",
+            "Default Gateway": "Unknown",
+            "DNS Servers": "Unknown"
+        },
+        {
+            "Description (Nama Perangkat)": "RZ616 Wi-Fi 6E 160MHz",
+            "Merk/Manufaktur": "Unknown",
+            "Kategori Perangkat": "Wireless Wi-Fi Adapter",
+            "Status Hardware": "Connected (Terhubung)",
+            "Physical Address (MAC)": "3C:C5:DD:02:DD:A6",
+            "IPv4 Address": "10.73.163.99",
+            "Subnet Mask": "255.255.255.0",
+            "Default Gateway": "10.73.163.153",
+            "DNS Servers": "10.73.163.153"
+        },
+        {
+            "Description (Nama Perangkat)": "Bluetooth Device (Personal Area Network)",
+            "Merk/Manufaktur": "Unknown",
+            "Kategori Perangkat": "LAN / Ethernet Card (Kabel)",
+            "Status Hardware": "Disabled / Disconnected",
+            "Physical Address (MAC)": "3C:C5:DD:02:DD:A7",
+            "IPv4 Address": "Disconnected / No IP",
+            "Subnet Mask": "Unknown",
+            "Default Gateway": "Unknown",
+            "DNS Servers": "Unknown"
+        }
+    ]
+}

@@ -1,0 +1,93 @@
+{
+    "User Session (Whoami)": {
+        "Username": "ZONA 11 ST1",
+        "Hostname": "DESKTOP-6P7UF7U",
+        "Full Identity": "DESKTOP-6P7UF7U\\ZONA 11 ST1"
+    },
+    "Sistem Operasi": "Windows 10 (64bit)",
+    "CPU": {
+        "Name": "Core(TM) i3-7100 CPU",
+        "Code Name": "Unknown",
+        "Package": "Socket 1151 LGA",
+        "Specification": "Intel(R) Core(TM) i3-7100 CPU @ 3.90GHz",
+        "Core Speed": "3900.0 MHz",
+        "Cores": 2,
+        "Threads": 4
+    },
+    "Mainboard": {
+        "Motherboard Manufacturer": "default",
+        "Model": "default",
+        "Version": "default",
+        "BIOS Vendor": "American Megatrends Inc.",
+        "BIOS Version": "4212",
+        "BIOS Date": "07/24/2019"
+    },
+    "Memory & SPD": {
+        "General": {
+            "Type": "DDR4",
+            "Total Size": "3.87 GB",
+            "Channel #": "Single",
+            "DRAM Frequency": "2400 MHz"
+        },
+        "SPD (Detail per Slot)": [
+            {
+                "Slot/Keping": "Slot #1",
+                "Ukuran (Size)": "4 GB",
+                "Merk/Manufaktur": "89F7",
+                "Part Number": "",
+                "Max Bandwidth/Speed": "2400 MHz"
+            }
+        ]
+    },
+    "Graphics": [
+        {
+            "Name/Model": "Intel(R) HD Graphics 630",
+            "Dedicated VRAM": "1024 MB",
+            "Driver Version": "31.0.101.2140"
+        }
+    ],
+    "Penyimpanan": [
+        {
+            "Model/Nama Drive": "V-GEN09HG25HS128HY",
+            "Tipe Interfasi": "SSD SATA",
+            "Koneksi Bus": "SATA",
+            "Kapasitas": "119.24 GB",
+            "Estimasi Batas Speed": "Up to 550 MB/s"
+        },
+        {
+            "Model/Nama Drive": "ST1000DM010-2EP102",
+            "Tipe Interfasi": "HDD Mechanical Drive",
+            "Koneksi Bus": "SATA",
+            "Kapasitas": "931.51 GB",
+            "Estimasi Batas Speed": "Up to 100 - 150 MB/s"
+        }
+    ],
+    "LAN/Network Card": [
+        {
+            "Description (Nama Perangkat)": "Realtek PCIe GbE Family Controller",
+            "Merk/Manufaktur": "Unknown",
+            "Kategori Perangkat": "LAN / Ethernet Card (Kabel)",
+            "Status Hardware": "Connected (Terhubung)",
+            "Physical Address (MAC)": "04:42:1A:07:74:F5",
+            "IPv4 Address": "192.168.33.66",
+            "Subnet Mask": "255.255.255.0",
+            "Default Gateway": "192.168.33.254",
+            "DNS Servers": "Unknown"
+        },
+        {
+            "Description (Nama Perangkat)": "D-Link DFE-520TX PCI Fast Ethernet Adapter",
+            "Merk/Manufaktur": "D-Link",
+            "Kategori Perangkat": "LAN / Ethernet Card (Kabel)",
+            "Status Hardware": "Connected (Terhubung)",
+            "Physical Address (MAC)": "70:62:B8:B5:64:31",
+            "IPv4 Address": "172.31.31.66",
+            "Subnet Mask": "255.255.0.0",
+            "Default Gateway": "172.31.31.254",
+            "DNS Servers": "Unknown"
+        }
+    ],
+    "DAT": "",
+    "Serial Number": "",
+    "Departemen": "WAREHOUSE",
+    "Pengguna": "ZONA 11 ST 1"
+}

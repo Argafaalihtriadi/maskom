@@ -1,0 +1,341 @@
+<%- include('partials/header', { title: 'Ekspor Laporan', activePage: 'inventory' }) %>
+
+<style>
+.export-table-wrap {
+    overflow-x: auto;
+    max-height: 62vh;
+    overflow-y: auto;
+    border-radius: 0 0 0.75rem 0.75rem;
+}
+.export-table {
+    border-collapse: collapse;
+    font-size: 11.5px;
+    white-space: nowrap;
+    width: max-content;
+    min-width: 100%;
+}
+.export-table thead tr {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+.export-table th {
+    background: #e8eaf0;
+    color: #374151;
+    font-weight: 700;
+    padding: 9px 14px;
+    text-align: left;
+    border: 1px solid #d1d5db;
+    letter-spacing: 0.02em;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+.export-table th:hover { background: #dde0ea; }
+.export-table th.sorted-asc::after { content: ' \u25b2'; color: #494bd6; }
+.export-table th.sorted-desc::after { content: ' \u25bc'; color: #494bd6; }
+.export-table td {
+    padding: 7px 14px;
+    border: 1px solid #e5e7eb;
+    color: #1f2937;
+    font-size: 11.5px;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.export-table tbody tr:nth-child(even) { background: #f9fafb; }
+.export-table tbody tr:hover { background: #eff6ff !important; }
+.export-table td.mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #494bd6; }
+.export-table td.badge-dep { font-weight: 600; color: #494bd6; }
+.export-table .empty { color: #9ca3af; font-style: italic; }
+
+.col-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1.5px solid;
+    transition: all 0.15s;
+    user-select: none;
+}
+.col-chip.active { background: #494bd6; color: #fff; border-color: #494bd6; }
+.col-chip.inactive { background: #f3f4f6; color: #6b7280; border-color: #d1d5db; }
+
+@media print {
+    nav, aside, .no-print, #sidebar, [class*="sidebar"],
+    .print-controls, .col-filter-bar, .export-table-wrap,
+    .summary-cards, .page-header { display: none !important; }
+    html, body { background: #fff !important; color: #000 !important; font-size: 8.5pt; }
+    .print-area { display: block !important; }
+    .print-table { width: 100%; border-collapse: collapse; font-size: 7.5pt; }
+    .print-table th {
+        background: #e5e7eb !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        border: 1px solid #9ca3af;
+        padding: 4px 6px;
+        font-size: 7pt;
+        text-align: left;
+    }
+    .print-table td { border: 1px solid #d1d5db; padding: 3px 6px; font-size: 7pt; }
+    .print-table tbody tr:nth-child(even) {
+        background: #f3f4f6 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .print-header { display: block !important; margin-bottom: 12px; }
+    @page { size: A3 landscape; margin: 10mm; }
+}
+.print-area { display: none; }
+</style>
+
+<div class="page-header flex items-end justify-between mb-6">
+  <div>
+    <div class="flex items-center gap-2 text-on-surface-variant mb-1 text-sm">
+      <a href="/inventory" class="hover:text-primary transition-colors font-medium">Inventaris</a>
+      <span class="material-symbols-outlined text-xs">chevron_right</span>
+      <span class="font-medium">Ekspor Laporan</span>
+    </div>
+    <h2 class="font-headline-md text-headline-md text-on-surface">Laporan Inventaris Lengkap</h2>
+    <p class="text-on-surface-variant text-sm mt-0.5">
+      Total <span class="font-bold text-primary"><%= totalDevices %></span> perangkat &bull; Dihasilkan: <span class="font-mono-data text-xs"><%= timestamp %></span>
+    </p>
+  </div>
+  <div class="print-controls flex gap-3 flex-wrap justify-end">
+    <a href="/api/export/inventory.csv"
+       class="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-label-md hover:bg-emerald-700 transition-colors shadow-md">
+      <span class="material-symbols-outlined text-base">download</span>
+      Unduh CSV Lengkap
+    </a>
+    <a href="/inventory"
+       class="flex items-center gap-2 px-4 py-2.5 border border-outline-variant rounded-xl text-on-surface font-label-md hover:bg-surface-container transition-colors">
+      <span class="material-symbols-outlined text-base">arrow_back</span>
+      Kembali
+    </a>
+  </div>
+</div>
+
+<%
+    const depts = {};   
+    const osCount = {};
+    rows.forEach(function(r) {
+      const dep = r['Departemen'] || '-';
+      const os = (r['Sistem Operasi'] || '-').split(' ').slice(0,2).join(' ');
+      depts[dep] = (depts[dep] || 0) + 1;
+      osCount[os] = (osCount[os] || 0) + 1;
+    });
+    const depCount = Object.keys(depts).filter(k => k !== '-').length;
+    const withDat = rows.filter(r => r['NO DAT'] && r['NO DAT'] !== '-').length;
+    const withSerial = rows.filter(r => r['Serial Number'] && r['Serial Number'] !== '-').length;
+%>
+
+<div class="summary-cards grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
+  <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 flex items-center gap-3">
+    <div class="p-2 bg-primary/10 rounded-lg text-primary"><span class="material-symbols-outlined">devices</span></div>
+    <div><p class="text-xs text-on-surface-variant">Total Perangkat</p><p class="text-xl font-bold text-on-surface"><%= totalDevices %></p></div>
+  </div>
+  <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 flex items-center gap-3">
+    <div class="p-2 bg-blue-500/10 rounded-lg text-blue-600"><span class="material-symbols-outlined">corporate_fare</span></div>
+    <div><p class="text-xs text-on-surface-variant">Departemen</p><p class="text-xl font-bold text-on-surface"><%= depCount %></p></div>
+  </div>
+  <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 flex items-center gap-3">
+    <div class="p-2 bg-emerald-500/10 rounded-lg text-emerald-600"><span class="material-symbols-outlined">tag</span></div>
+    <div><p class="text-xs text-on-surface-variant">Berisi NO DAT</p><p class="text-xl font-bold text-on-surface"><%= withDat %> / <%= totalDevices %></p></div>
+  </div>
+  <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 flex items-center gap-3">
+    <div class="p-2 bg-amber-500/10 rounded-lg text-amber-600"><span class="material-symbols-outlined">numbers</span></div>
+    <div><p class="text-xs text-on-surface-variant">Berisi Serial</p><p class="text-xl font-bold text-on-surface"><%= withSerial %> / <%= totalDevices %></p></div>
+  </div>
+</div>
+
+<div class="col-filter-bar bg-surface-container-lowest border border-outline-variant rounded-xl p-4 mb-4">
+  <p class="text-xs text-on-surface-variant font-semibold uppercase tracking-wider mb-3">Tampilkan Grup Kolom:</p>
+  <div class="flex flex-wrap gap-2" id="colGroupChips">
+    <span class="col-chip active" data-group="identitas" onclick="toggleGroup(this)">Identitas Aset</span>
+    <span class="col-chip active" data-group="cpu" onclick="toggleGroup(this)">CPU</span>
+    <span class="col-chip active" data-group="mainboard" onclick="toggleGroup(this)">Mainboard</span>
+    <span class="col-chip active" data-group="ram" onclick="toggleGroup(this)">RAM</span>
+    <span class="col-chip active" data-group="gpu" onclick="toggleGroup(this)">GPU</span>
+    <span class="col-chip active" data-group="storage" onclick="toggleGroup(this)">Storage</span>
+    <span class="col-chip active" data-group="network" onclick="toggleGroup(this)">Jaringan</span>
+  </div>
+</div>
+
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm mb-6">
+  <div class="p-4 border-b border-outline-variant bg-surface-container-low flex items-center justify-between">
+    <h3 class="font-headline-sm text-headline-sm">Preview Data — <%= totalDevices %> Perangkat</h3>
+    <p class="text-xs text-on-surface-variant">Klik header kolom untuk sort. Toggle chip di atas untuk sembunyikan/tampilkan grup kolom.</p>
+  </div>
+  <div class="export-table-wrap">
+    <table class="export-table" id="exportTable">
+      <thead>
+        <tr>
+          <th data-group="identitas" onclick="sortTable(0,this)">No</th>
+          <th data-group="identitas" onclick="sortTable(1,this)">Hostname</th>
+          <th data-group="identitas" onclick="sortTable(2,this)">NO DAT</th>
+          <th data-group="identitas" onclick="sortTable(3,this)">Serial Number</th>
+          <th data-group="identitas" onclick="sortTable(4,this)">Departemen</th>
+          <th data-group="identitas" onclick="sortTable(5,this)">Pengguna</th>
+          <th data-group="identitas" onclick="sortTable(6,this)">Username Sistem</th>
+          <th data-group="identitas" onclick="sortTable(7,this)">Sistem Operasi</th>
+          <th data-group="identitas" onclick="sortTable(8,this)">IP Address</th>
+          <th data-group="identitas" onclick="sortTable(9,this)">MAC Address</th>
+          <th data-group="network" onclick="sortTable(10,this)">Gateway</th>
+          <th data-group="network" onclick="sortTable(11,this)">IP LAN2</th>
+          <th data-group="network" onclick="sortTable(12,this)">MAC LAN2</th>
+          <th data-group="cpu" onclick="sortTable(13,this)">CPU</th>
+          <th data-group="cpu" onclick="sortTable(14,this)">Cores/Threads</th>
+          <th data-group="cpu" onclick="sortTable(15,this)">Clock Speed</th>
+          <th data-group="mainboard" onclick="sortTable(16,this)">Mainboard</th>
+          <th data-group="mainboard" onclick="sortTable(17,this)">BIOS</th>
+          <th data-group="ram" onclick="sortTable(18,this)">RAM</th>
+          <th data-group="ram" onclick="sortTable(19,this)">RAM Freq</th>
+          <th data-group="gpu" onclick="sortTable(20,this)">GPU</th>
+          <th data-group="gpu" onclick="sortTable(21,this)">VRAM</th>
+          <th data-group="storage" onclick="sortTable(22,this)">Penyimpanan</th>
+          <th data-group="identitas" onclick="sortTable(23,this)">File</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function(r, i) { %>
+        <tr>
+          <td><%= i + 1 %></td>
+          <td style="font-weight:600"><%= r['Hostname'] %></td>
+          <td class="mono"><%= r['NO DAT'] !== '-' ? r['NO DAT'] : '' %></td>
+          <td class="mono"><%= r['Serial Number'] !== '-' ? r['Serial Number'] : '' %></td>
+          <td class="badge-dep"><%= r['Departemen'] !== '-' ? r['Departemen'] : '' %></td>
+          <td><%= r['Pengguna'] !== '-' ? r['Pengguna'] : '' %></td>
+          <td class="mono" style="font-size:10.5px"><%= r['Username'] %></td>
+          <td><%= r['Sistem Operasi'] %></td>
+          <td class="mono"><%= r['IP Address (LAN1)'] %></td>
+          <td class="mono" style="font-size:10px"><%= r['MAC Address (LAN1)'] %></td>
+          <td class="mono" style="font-size:10px"><%= r['Default Gateway (LAN1)'] !== '-' ? r['Default Gateway (LAN1)'] : '' %></td>
+          <td class="mono" style="font-size:10px"><%= r['IP Address (LAN2)'] !== '-' ? r['IP Address (LAN2)'] : '' %></td>
+          <td class="mono" style="font-size:10px"><%= r['MAC Address (LAN2)'] !== '-' ? r['MAC Address (LAN2)'] : '' %></td>
+          <td title="<%= r['CPU Specification'] %>"><%= r['CPU'] %></td>
+          <td style="text-align:center"><%= r['CPU Cores'] %>C / <%= r['CPU Threads'] %>T</td>
+          <td class="mono"><%= r['CPU Core Speed (MHz)'] %></td>
+          <td><%= r['Mainboard Manufacturer'] ? r['Mainboard Manufacturer'].replace(/PT Zyrexindo.*Tbk\.?/i,'Zyrex') : '' %> <%= r['Mainboard Model'] !== '-' ? r['Mainboard Model'].substring(0,18) : '' %></td>
+          <td class="mono" style="font-size:10px"><%= r['BIOS Version'] %> (<%= r['BIOS Date'] %>)</td>
+          <td class="mono"><%= r['RAM Total'] %> <b style="color:#494bd6"><%= r['RAM Type'] %></b></td>
+          <td class="mono" style="font-size:10px"><%= r['RAM Frequency'] %></td>
+          <td title="<%= r['GPU'] %>"><%= r['GPU'] ? r['GPU'].substring(0,22) : '' %></td>
+          <td class="mono" style="font-size:10px"><%= r['GPU VRAM'] %></td>
+          <td title="<%= r['Penyimpanan'] %>"><%= r['Penyimpanan'] ? r['Penyimpanan'].substring(0,35) + (r['Penyimpanan'].length > 35 ? '...' : '') : '' %></td>
+          <td class="mono" style="font-size:10px;color:#9ca3af"><%= r['Filename'] %></td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Print Area (hidden on screen, visible on print) -->
+<div class="print-area" id="printArea">
+  <div class="print-header">
+    <div style="border-bottom:3px solid #494bd6;padding-bottom:8px;margin-bottom:6px">
+      <h1 style="font-size:16pt;font-weight:800;color:#111827;margin:0">Laporan Inventaris Aset Komputer</h1>
+      <p style="font-size:9pt;color:#6b7280;margin:2px 0 0 0">ProTech Infrastructure Management System (MaskomApp)</p>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:10px;font-size:8.5pt;color:#374151">
+      <span>Total Perangkat: <b><%= totalDevices %></b> &nbsp;|&nbsp; Departemen: <b><%= depCount %></b> &nbsp;|&nbsp; Terdata DAT: <b><%= withDat %></b> &nbsp;|&nbsp; Terdata Serial: <b><%= withSerial %></b></span>
+      <span>Dicetak: <b><%= timestamp %></b></span>
+    </div>
+  </div>
+  <table class="print-table">
+    <thead>
+      <tr>
+        <th>No</th><th>Hostname</th><th>NO DAT</th><th>Serial Number</th>
+        <th>Departemen</th><th>Pengguna</th><th>Sistem Operasi</th>
+        <th>IP Address</th><th>MAC Address</th>
+        <th>CPU</th><th>C/T</th><th>RAM</th>
+        <th>GPU</th><th>Storage</th><th>Mainboard</th><th>BIOS</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% rows.forEach(function(r, i) { %>
+      <tr>
+        <td style="text-align:center"><%= i+1 %></td>
+        <td style="font-weight:700"><%= r['Hostname'] %></td>
+        <td style="font-family:monospace"><%= r['NO DAT'] !== '-' ? r['NO DAT'] : '' %></td>
+        <td style="font-family:monospace"><%= r['Serial Number'] !== '-' ? r['Serial Number'] : '' %></td>
+        <td style="font-weight:600;color:#494bd6"><%= r['Departemen'] !== '-' ? r['Departemen'] : '' %></td>
+        <td><%= r['Pengguna'] !== '-' ? r['Pengguna'] : '' %></td>
+        <td><%= r['Sistem Operasi'] %></td>
+        <td style="font-family:monospace"><%= r['IP Address (LAN1)'] %></td>
+        <td style="font-family:monospace;font-size:6.5pt"><%= r['MAC Address (LAN1)'] %></td>
+        <td><%= r['CPU'] %></td>
+        <td style="text-align:center"><%= r['CPU Cores'] %>/<%= r['CPU Threads'] %></td>
+        <td style="font-family:monospace"><%= r['RAM Total'] %> <%= r['RAM Type'] %></td>
+        <td style="font-size:6.5pt"><%= r['GPU'] ? r['GPU'].substring(0,25) : '' %></td>
+        <td style="font-size:6.5pt"><%= r['Penyimpanan'] ? r['Penyimpanan'].substring(0,30) : '' %></td>
+        <td style="font-size:6.5pt"><%= (r['Mainboard Manufacturer']||'').replace(/PT Zyrexindo.*Tbk\.?/i,'Zyrex') %> <%= (r['Mainboard Model']||'').substring(0,16) %></td>
+        <td style="font-family:monospace;font-size:6pt"><%= r['BIOS Version'] %></td>
+      </tr>
+      <% }); %>
+    </tbody>
+  </table>
+  <p style="margin-top:12px;font-size:7.5pt;color:#9ca3af;text-align:right">
+    Dokumen ini digenerate otomatis oleh MaskomApp &bull; <%= timestamp %>
+  </p>
+</div>
+
+<script>
+const groupColMap = {
+    identitas: [0,1,2,3,4,5,6,7,8,9,23],
+    network:   [10,11,12],
+    cpu:       [13,14,15],
+    mainboard: [16,17],
+    ram:       [18,19],
+    gpu:       [20,21],
+    storage:   [22]
+};
+const activeGroups = { identitas:true, cpu:true, mainboard:true, ram:true, gpu:true, storage:true, network:true };
+
+function toggleGroup(chip) {
+    const group = chip.dataset.group;
+    activeGroups[group] = !activeGroups[group];
+    chip.classList.toggle('active', activeGroups[group]);
+    chip.classList.toggle('inactive', !activeGroups[group]);
+    updateColumnVisibility();
+}
+function updateColumnVisibility() {
+    const table = document.getElementById('exportTable');
+    table.querySelectorAll('tr').forEach(row => {
+        const cells = row.querySelectorAll('th,td');
+        Object.entries(groupColMap).forEach(([group, idxs]) => {
+            idxs.forEach(idx => { if(cells[idx]) cells[idx].style.display = activeGroups[group] ? '' : 'none'; });
+        });
+    });
+}
+
+let sortColIdx = -1, sortAsc = true;
+function sortTable(colIdx, thEl) {
+    const table = document.getElementById('exportTable');
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    if(sortColIdx === colIdx) { sortAsc = !sortAsc; } else { sortAsc = true; sortColIdx = colIdx; }
+    table.querySelectorAll('th').forEach(th => th.classList.remove('sorted-asc','sorted-desc'));
+    thEl.classList.add(sortAsc ? 'sorted-asc' : 'sorted-desc');
+    rows.sort((a,b) => {
+        const at = (a.querySelectorAll('td')[colIdx]?.textContent||'').trim().toLowerCase();
+        const bt = (b.querySelectorAll('td')[colIdx]?.textContent||'').trim().toLowerCase();
+        const an = parseFloat(at), bn = parseFloat(bt);
+        if(!isNaN(an)&&!isNaN(bn)) return sortAsc ? an-bn : bn-an;
+        return sortAsc ? at.localeCompare(bt,'id') : bt.localeCompare(at,'id');
+    });
+    rows.forEach(row => tbody.appendChild(row));
+}
+
+function printReport() {
+    window.print();
+}
+</script>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,75 @@
+{
+    "User Session (Whoami)": {
+        "Username": "User",
+        "Hostname": "DESKTOP-GPNE3SG",
+        "Full Identity": "DESKTOP-GPNE3SG\\User"
+    },
+    "Sistem Operasi": "Windows 11 (64bit)",
+    "CPU": {
+        "Name": "Core(TM) i3-10100 CPU",
+        "Code Name": "Unknown",
+        "Package": "Socket 1200 LGA",
+        "Specification": "Intel(R) Core(TM) i3-10100 CPU @ 3.60GHz",
+        "Core Speed": "3600.0 MHz",
+        "Cores": 4,
+        "Threads": 8
+    },
+    "Mainboard": {
+        "Motherboard Manufacturer": "ASUSTeK COMPUTER INC.",
+        "Model": "PRIME H510M-A",
+        "Version": "Rev 1.xx",
+        "BIOS Vendor": "American Megatrends Inc.",
+        "BIOS Version": "1410Z",
+        "BIOS Date": "01/28/2022"
+    },
+    "Memory & SPD": {
+        "General": {
+            "Type": "DDR4",
+            "Total Size": "3.82 GB",
+            "Channel #": "Single",
+            "DRAM Frequency": "2667 MHz"
+        },
+        "SPD (Detail per Slot)": [
+            {
+                "Slot/Keping": "Slot #1",
+                "Ukuran (Size)": "4 GB",
+                "Merk/Manufaktur": "0x0000",
+                "Part Number": "",
+                "Max Bandwidth/Speed": "2667 MHz"
+            }
+        ]
+    },
+    "Graphics": [
+        {
+            "Name/Model": "Intel(R) UHD Graphics 630",
+            "Dedicated VRAM": "1024 MB",
+            "Driver Version": "30.0.100.9805"
+        }
+    ],
+    "Penyimpanan": [
+        {
+            "Model/Nama Drive": "ST1000DM010-2EP102",
+            "Tipe Interfasi": "HDD Mechanical Drive",
+            "Koneksi Bus": "SATA",
+            "Kapasitas": "931.51 GB",
+            "Estimasi Batas Speed": "Up to 100 - 150 MB/s"
+        }
+    ],
+    "LAN/Network Card": [
+        {
+            "Description (Nama Perangkat)": "Intel(R) Ethernet Connection (14) I219-V",
+            "Merk/Manufaktur": "Intel Corporation",
+            "Kategori Perangkat": "LAN / Ethernet Card (Kabel)",
+            "Status Hardware": "Connected (Terhubung)",
+            "Physical Address (MAC)": "58:11:22:04:D0:A0",
+            "IPv4 Address": "192.168.33.44",
+            "Subnet Mask": "255.255.255.0",
+            "Default Gateway": "192.168.33.254",
+            "DNS Servers": "Unknown"
+        }
+    ],
+    "DAT": "",
+    "Serial Number": "",
+    "Departemen": "WAREHOUSE",
+    "Pengguna": "ZONA 3 ST 2"
+}

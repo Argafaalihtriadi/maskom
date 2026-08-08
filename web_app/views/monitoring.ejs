@@ -1,0 +1,365 @@
+<%- include('partials/header', { title: 'Monitoring', activePage: 'monitoring' }) %>
+
+<style>
+.mon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+.mon-card {
+    background: #fff; border: 1px solid #c7c4d7; border-radius: 10px;
+    overflow: hidden; cursor: pointer; transition: all 0.2s; user-select: none;
+    position: relative;
+}
+.mon-card:hover { border-color: #494bd6; box-shadow: 0 2px 12px rgba(73,75,214,0.12); }
+.mon-card.selected { border-color: #494bd6; box-shadow: 0 0 0 2px #494bd6; }
+.mon-card .preview {
+    height: 110px; background: #1a1a2e; display: flex; align-items: center;
+    justify-content: center; color: #4a4a6a; font-size: 11px; position: relative;
+    overflow: hidden;
+}
+.mon-card .preview img { width: 100%; height: 100%; object-fit: cover; }
+.mon-card .preview .no-screenshot {
+    position: absolute; inset: 0; display: flex; align-items: center;
+    justify-content: center; flex-direction: column; gap: 4px;
+}
+.mon-card .info { padding: 8px 10px; }
+.mon-card .info .hostname { font-weight: 600; font-size: 12px; color: #191c1e; }
+.mon-card .info .detail { font-size: 10px; color: #464554; margin-top: 2px; }
+.mon-card .info .status-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+.mon-card .info .status-dot { width: 6px; height: 6px; border-radius: 50%; }
+.mon-card .info .status-dot.online { background: #22C55E; }
+.mon-card .info .status-dot.offline { background: #EF4444; }
+.mon-card .check {
+    position: absolute; top: 6px; right: 6px; width: 18px; height: 18px;
+    border-radius: 4px; border: 2px solid rgba(255,255,255,0.6);
+    background: rgba(0,0,0,0.3); display: flex; align-items: center;
+    justify-content: center; color: #fff; font-size: 12px; font-weight: 700;
+    opacity: 0; transition: 0.15s;
+}
+.mon-card:hover .check { opacity: 1; }
+.mon-card.selected .check { opacity: 1; background: #494bd6; border-color: #494bd6; }
+.action-bar {
+    display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+    padding: 12px 16px; background: #fff; border: 1px solid #c7c4d7;
+    border-radius: 10px; margin-bottom: 16px;
+}
+.action-bar .selected-info { font-size: 12px; color: #464554; margin-right: 8px; white-space: nowrap; }
+.action-bar button {
+    display: flex; align-items: center; gap: 4px; padding: 6px 12px;
+    border: 1px solid #c7c4d7; border-radius: 8px; background: #f7f9fb;
+    font-size: 11px; font-weight: 500; color: #191c1e; cursor: pointer;
+    transition: 0.15s; white-space: nowrap;
+}
+.action-bar button:hover { background: #eceef0; }
+.action-bar button.primary { background: #494bd6; color: #fff; border-color: #494bd6; }
+.action-bar button.primary:hover { opacity: 0.9; }
+.action-bar button.danger { color: #EF4444; border-color: #EF444440; }
+.action-bar button.danger:hover { background: #fef2f2; }
+.action-bar button.success { color: #22C55E; border-color: #22C55E40; }
+.action-bar button.success:hover { background: #f0fdf4; }
+.action-bar button.warning { color: #F59E0B; border-color: #F59E0B40; }
+.action-bar button.warning:hover { background: #fffbeb; }
+.tooltip-wrap { position: relative; }
+.tooltip-wrap:hover .tooltip-text { display: block; }
+.tooltip-text {
+    display: none; position: absolute; bottom: calc(100% + 6px); left: 50%;
+    transform: translateX(-50%); background: #1a1a2e; color: #fff;
+    padding: 4px 10px; border-radius: 6px; font-size: 10px; white-space: nowrap;
+    z-index: 10;
+}
+@media (max-width: 640px) { .mon-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); } }
+</style>
+
+<div class="flex items-end justify-between mb-4">
+    <div>
+        <h2 class="font-headline-md text-headline-md text-on-surface">Monitoring</h2>
+        <p class="text-on-surface-variant font-body-md mt-1">Pantau & kendalikan seluruh perangkat secara real-time.</p>
+    </div>
+    <div class="flex gap-2">
+        <button onclick="selectAll()" class="flex items-center gap-1 px-3 py-1.5 border border-outline-variant rounded-lg text-xs hover:bg-surface-container">Pilih Semua</button>
+        <button onclick="deselectAll()" class="flex items-center gap-1 px-3 py-1.5 border border-outline-variant rounded-lg text-xs hover:bg-surface-container">Hapus Pilihan</button>
+        <button onclick="refreshPing()" class="flex items-center gap-1 px-3 py-1.5 border border-outline-variant rounded-lg text-xs hover:bg-surface-container">↻ Refresh</button>
+    </div>
+</div>
+
+<!-- Action Bar -->
+<div class="action-bar" id="actionBar">
+    <span class="selected-info" id="selectedInfo">Pilih perangkat untuk mengontrol</span>
+    <div class="tooltip-wrap"><button onclick="bulkAction('view')" class="primary">👁 View</button><div class="tooltip-text">Remote View (read-only)</div></div>
+    <div class="tooltip-wrap"><button onclick="bulkAction('control')" class="primary">🖥 Control</button><div class="tooltip-text">Remote Control (full akses)</div></div>
+    <div class="tooltip-wrap"><button onclick="bulkAction('lock')" class="warning">🔒 Lock</button><div class="tooltip-text">Kunci layar PC</div></div>
+    <div class="tooltip-wrap"><button onclick="bulkAction('message')" class="warning">💬 Pesan</button><div class="tooltip-text">Kirim pesan ke PC</div></div>
+    <div class="tooltip-wrap"><button onclick="bulkAction('run')" class="warning">▶ Run</button><div class="tooltip-text">Jalankan program</div></div>
+    <div class="tooltip-wrap"><button onclick="bulkAction('wol')" class="success">⚡ Power On</button><div class="tooltip-text">Wake-on-LAN</div></div>
+    <div class="tooltip-wrap"><button onclick="bulkAction('restart')" class="warning">🔄 Reboot</button><div class="tooltip-text">Restart PC</div></div>
+    <div class="tooltip-wrap"><button onclick="bulkAction('shutdown')" class="danger">⏻ Shutdown</button><div class="tooltip-text">Matikan PC</div></div>
+    <div class="tooltip-wrap"><button onclick="bulkAction('upload')" class="success">📁 File</button><div class="tooltip-text">Kirim file ke PC</div></div>
+</div>
+
+<!-- Modal Pesan -->
+<div id="msgModal" class="fixed inset-0 bg-on-background/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center">
+<div class="bg-white rounded-xl shadow-lg border max-w-md w-full p-6">
+    <h3 class="font-headline-sm mb-4">Kirim Pesan</h3>
+    <input id="msgTitle" class="w-full border border-outline-variant rounded-lg px-3 py-2 text-sm mb-3" placeholder="Judul pesan (opsional)" value="MaskomApp">
+    <textarea id="msgText" class="w-full border border-outline-variant rounded-lg px-3 py-2 text-sm mb-4 h-24" placeholder="Tulis pesan..."></textarea>
+    <div class="flex justify-end gap-3">
+        <button onclick="document.getElementById('msgModal').classList.add('hidden')" class="px-4 py-2 text-sm rounded-lg hover:bg-surface-container">Batal</button>
+        <button onclick="sendMessage()" class="px-4 py-2 bg-primary text-white text-sm rounded-lg hover:opacity-90">Kirim</button>
+    </div>
+</div>
+</div>
+
+<!-- Modal Run Program -->
+<div id="runModal" class="fixed inset-0 bg-on-background/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center">
+<div class="bg-white rounded-xl shadow-lg border max-w-md w-full p-6">
+    <h3 class="font-headline-sm mb-4">Jalankan Program</h3>
+    <div class="flex gap-2 mb-3 flex-wrap">
+        <button onclick="setRun('notepad.exe')" class="px-3 py-1 border border-outline-variant rounded text-xs hover:bg-surface-container">Notepad</button>
+        <button onclick="setRun('calc.exe')" class="px-3 py-1 border border-outline-variant rounded text-xs hover:bg-surface-container">Calculator</button>
+        <button onclick="setRun('cmd.exe')" class="px-3 py-1 border border-outline-variant rounded text-xs hover:bg-surface-container">CMD</button>
+        <button onclick="setRun('powershell.exe')" class="px-3 py-1 border border-outline-variant rounded text-xs hover:bg-surface-container">PowerShell</button>
+        <button onclick="setRun('taskmgr.exe')" class="px-3 py-1 border border-outline-variant rounded text-xs hover:bg-surface-container">Task Manager</button>
+        <button onclick="setRun('chrome.exe')" class="px-3 py-1 border border-outline-variant rounded text-xs hover:bg-surface-container">Chrome</button>
+        <button onclick="setRun('firefox.exe')" class="px-3 py-1 border border-outline-variant rounded text-xs hover:bg-surface-container">Firefox</button>
+    </div>
+    <input id="runCommand" class="w-full border border-outline-variant rounded-lg px-3 py-2 text-sm mb-3" placeholder="Atau ketik manual...">
+    <p class="text-xs text-on-surface-variant mb-4">Pastikan program sudah terinstall di PC target. Path otomatis pakai <code>%PATH%</code> sistem.</p>
+    <div class="flex justify-end gap-3">
+        <button onclick="document.getElementById('runModal').classList.add('hidden')" class="px-4 py-2 text-sm rounded-lg hover:bg-surface-container">Batal</button>
+        <button onclick="sendRun()" class="px-4 py-2 bg-primary text-white text-sm rounded-lg hover:opacity-90">Jalankan</button>
+    </div>
+</div>
+</div>
+
+<!-- Modal File Upload -->
+<div id="uploadModal" class="fixed inset-0 bg-on-background/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center">
+<div class="bg-white rounded-xl shadow-lg border max-w-md w-full p-6">
+    <h3 class="font-headline-sm mb-4">Kirim File</h3>
+    <p class="text-xs text-on-surface-variant mb-3">File akan dikirim ke folder tujuan di setiap PC.</p>
+    <div class="border-b border-outline-variant pb-3 mb-3">
+        <label class="block text-xs font-semibold text-on-surface-variant mb-2">Upload File ke Server</label>
+        <form id="uploadForm" onsubmit="return uploadFile(this)">
+            <input type="file" id="fileInput" class="block w-full text-xs mb-2" required>
+            <button type="submit" class="px-3 py-1.5 bg-primary text-white text-xs rounded-lg hover:opacity-90">Upload ke Server</button>
+        </form>
+    </div>
+    <div class="mb-3">
+        <label class="block text-xs font-semibold text-on-surface-variant mb-1">Pilih File untuk Dikirim</label>
+        <select id="fileSelect" class="w-full border border-outline-variant rounded-lg px-3 py-2 text-sm mb-2">
+            <option value="">-- Pilih file --</option>
+        </select>
+        <button onclick="loadFiles()" class="text-xs text-primary hover:underline">↻ Refresh daftar file</button>
+    </div>
+    <div class="mb-3">
+        <label class="block text-xs font-semibold text-on-surface-variant mb-1">Folder Tujuan (share path)</label>
+        <input id="destFolder" class="w-full border border-outline-variant rounded-lg px-3 py-2 text-sm" value="D$\" placeholder="Contoh: D$\Folder atau C$\Users\Public">
+        <p class="text-[10px] text-on-surface-variant mt-1">Gunakan <code>C$</code> untuk C:, <code>D$</code> untuk D:, dll.</p>
+    </div>
+    <div class="flex justify-end gap-3">
+        <button onclick="document.getElementById('uploadModal').classList.add('hidden')" class="px-4 py-2 text-sm rounded-lg hover:bg-surface-container">Batal</button>
+        <button onclick="sendFile()" class="px-4 py-2 bg-primary text-white text-sm rounded-lg hover:opacity-90">Kirim</button>
+    </div>
+</div>
+</div>
+
+<!-- Device Grid -->
+<div class="mon-grid" id="deviceGrid">
+<% if(typeof devices !== 'undefined' && devices.length > 0) {
+    devices.forEach(function(device) {
+        const userInfo = device.data["User Session (Whoami)"] || {};
+        let ip = 'Unknown';
+        let mac = '';
+        if (device.data["LAN/Network Card"] && device.data["LAN/Network Card"].length > 0) {
+            const cc = device.data["LAN/Network Card"].find(c => c["Status Hardware"] && c["Status Hardware"].includes("Connected")) || device.data["LAN/Network Card"][0];
+            ip = cc["IPv4 Address"]; mac = cc["Physical Address (MAC)"];
+        }
+        const hostname = userInfo.Hostname || device.filename.replace('.json','');
+        const pengguna = device.data.Pengguna || userInfo.Username || '';
+        const dept = device.data.Departemen || '';
+%>
+<div class="mon-card" data-ip="<%= ip %>" data-mac="<%= mac %>" data-hostname="<%= hostname %>" onclick="toggleCard(this)">
+    <div class="check">✓</div>
+    <div class="preview">
+        <img data-src="/api/monitor/screenshot/<%= hostname %>" alt="" style="display:none" onerror="this.style.display='none'" onload="this.style.display='block';this.parentNode.querySelector('.no-screenshot').style.display='none'"/>
+        <div class="no-screenshot">
+            <span class="material-symbols-outlined" style="font-size:32px;opacity:0.3">desktop_windows</span>
+            <span class="ping-label" data-ip="<%= ip %>">Memeriksa...</span>
+        </div>
+    </div>
+    <div class="info" onclick="event.stopPropagation()">
+        <div class="hostname"><%= hostname %></div>
+        <div class="detail"><%= pengguna %><%= dept ? ' • ' + dept : '' %></div>
+        <div class="status-row">
+            <span class="status-dot offline" id="dot-<%= ip.replace(/\./g,'-') %>"></span>
+            <span class="status-dot ping-ms" id="ping-<%= ip.replace(/\./g,'-') %>" style="font-size:10px;color:#94a3b8">-</span>
+        </div>
+    </div>
+</div>
+<% }); } else { %>
+<div class="col-span-full text-center py-12 text-on-surface-variant">Tidak ada perangkat terdaftar.</div>
+<% } %>
+</div>
+
+<script>
+const selectedIps = new Set();
+
+function toggleCard(el) {
+    const ip = el.dataset.ip;
+    el.classList.toggle('selected');
+    if (el.classList.contains('selected')) selectedIps.add(ip);
+    else selectedIps.delete(ip);
+    updateActionBar();
+}
+
+function selectAll() {
+    document.querySelectorAll('.mon-card').forEach(c => { c.classList.add('selected'); selectedIps.add(c.dataset.ip); });
+    updateActionBar();
+}
+function deselectAll() {
+    document.querySelectorAll('.mon-card').forEach(c => { c.classList.remove('selected'); });
+    selectedIps.clear();
+    updateActionBar();
+}
+function updateActionBar() {
+    document.getElementById('selectedInfo').textContent = selectedIps.size ? selectedIps.size + ' perangkat dipilih' : 'Pilih perangkat untuk mengontrol';
+}
+
+function getSelectedIps() { return Array.from(selectedIps).filter(ip => ip && ip !== 'Unknown'); }
+
+function bulkAction(action) {
+    const ips = getSelectedIps();
+    if (!ips.length) { alert('Pilih setidaknya satu perangkat.'); return; }
+    if (action === 'view' || action === 'control') {
+        const mode = action === 'view' ? 'view' : 'control';
+        ips.forEach(ip => window.open('/remote/' + ip + '?mode=' + mode, 'vnc_' + ip, 'width=1024,height=768'));
+    } else if (action === 'lock') {
+        if (!confirm('Kunci layar ' + ips.length + ' perangkat?')) return;
+        fetch('/api/remote/lock', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ips}) })
+        .then(r=>r.json()).then(d=>alert(d.success?'✅ '+d.message:'❌ '+d.message)).catch(()=>alert('❌ Gagal'));
+    } else if (action === 'message') {
+        document.getElementById('msgModal').classList.remove('hidden');
+    } else if (action === 'run') {
+        document.getElementById('runModal').classList.remove('hidden');
+    } else if (action === 'wol') {
+        const macs = ips.map(ip => document.querySelector(`.mon-card[data-ip="${ip}"]`)).map(el => el ? el.dataset.mac : '').filter(m => m);
+        if (!macs.length) { alert('Tidak ada MAC address untuk perangkat yang dipilih.'); return; }
+        if (!confirm('Kirim WOL ke ' + ips.length + ' perangkat?')) return;
+        fetch('/api/wol', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({macs}) })
+        .then(r=>r.json()).then(d=>alert(d.success?'✅ '+d.message:'❌ '+d.message)).catch(()=>alert('❌ Gagal'));
+    } else if (action === 'restart' || action === 'shutdown') {
+        const label = action === 'restart' ? 'Restart' : 'Matikan';
+        if (!confirm(label + ' ' + ips.length + ' perangkat?')) return;
+        fetch('/api/remote/shutdown', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ips, action}) })
+        .then(r=>r.json()).then(d=>alert(d.success?'✅ '+d.message:'❌ '+d.message)).catch(()=>alert('❌ Gagal'));
+    } else if (action === 'upload') {
+        loadFiles();
+        document.getElementById('uploadModal').classList.remove('hidden');
+    }
+}
+
+function sendMessage() {
+    const ips = getSelectedIps();
+    const title = document.getElementById('msgTitle').value;
+    const message = document.getElementById('msgText').value;
+    if (!message) { alert('Pesan tidak boleh kosong.'); return; }
+    fetch('/api/remote/message', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ips, title, message}) })
+    .then(r=>r.json()).then(d=>{ alert(d.success?'✅ '+d.message:'❌ '+d.message); document.getElementById('msgModal').classList.add('hidden'); })
+    .catch(()=>alert('❌ Gagal'));
+}
+
+function setRun(cmd) { document.getElementById('runCommand').value = cmd; }
+
+function sendRun() {
+    const ips = getSelectedIps();
+    const command = document.getElementById('runCommand').value;
+    if (!command) { alert('Perintah tidak boleh kosong.'); return; }
+    fetch('/api/remote/run', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ips, command}) })
+    .then(r=>r.json()).then(d=>{ alert(d.success?'✅ '+d.message:'❌ '+d.message); document.getElementById('runModal').classList.add('hidden'); })
+    .catch(()=>alert('❌ Gagal'));
+}
+
+function uploadFile(form) {
+    const input = document.getElementById('fileInput');
+    if (!input.files.length) { alert('Pilih file terlebih dahulu.'); return false; }
+    const fd = new FormData();
+    fd.append('file', input.files[0]);
+    const btn = form.querySelector('button');
+    btn.textContent = 'Mengupload...';
+    btn.disabled = true;
+    fetch('/api/remote/upload-file', { method:'POST', body:fd })
+    .then(r=>r.json()).then(d=>{
+        alert(d.success ? '✅ '+d.message : '❌ '+d.message);
+        if (d.success) { input.value = ''; loadFiles(); }
+    }).catch(()=>alert('❌ Gagal upload'))
+    .finally(()=>{ btn.textContent = 'Upload ke Server'; btn.disabled = false; });
+    return false;
+}
+
+function loadFiles() {
+    fetch('/api/remote/upload-files').then(r=>r.json()).then(d=>{
+        const sel = document.getElementById('fileSelect');
+        sel.innerHTML = '<option value="">-- Pilih file --</option>';
+        d.files.forEach(f => { sel.innerHTML += '<option value="'+f+'">'+f+'</option>'; });
+    });
+}
+
+function sendFile() {
+    const ips = getSelectedIps();
+    const fileName = document.getElementById('fileSelect').value;
+    const destFolder = document.getElementById('destFolder').value || 'D$\\';
+    if (!fileName) { alert('Pilih file terlebih dahulu.'); return; }
+    fetch('/api/remote/upload', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ips, fileName, destFolder}) })
+    .then(r=>r.json()).then(d=>{
+        if (d.success) { alert('✅ '+d.message); document.getElementById('uploadModal').classList.add('hidden'); }
+        else {
+            let errMsg = d.message + '\n';
+            if (d.failed && d.failed.length) {
+                d.failed.forEach(f => { errMsg += '\n' + f.ip + ': ' + (f.error || 'Gagal'); });
+            }
+            alert('❌ ' + errMsg);
+        }
+    })
+    .catch(()=>alert('❌ Gagal'));
+}
+
+// Ping polling
+async function doPing(ip) {
+    try { const r = await fetch('/api/ping?ip='+ip); return await r.json(); } catch(e) { return {alive:false}; }
+}
+async function pingAll() {
+    const cards = document.querySelectorAll('.mon-card');
+    const batchSize = 5;
+    for (let i = 0; i < cards.length; i += batchSize) {
+        const batch = Array.from(cards).slice(i, i + batchSize);
+        await Promise.all(batch.map(async card => {
+            const ip = card.dataset.ip;
+            if (!ip || ip === 'Unknown') return;
+            const dot = card.querySelector('.status-dot');
+            const label = card.querySelector('.ping-label');
+            const pingEl = card.querySelector('.ping-ms');
+            if (label) label.textContent = 'Pinging...';
+            const r = await doPing(ip);
+            if (dot) { dot.className = 'status-dot ' + (r.alive ? 'online' : 'offline'); }
+            if (pingEl) pingEl.textContent = r.alive ? (r.time || '0') + 'ms' : 'Offline';
+            if (label) label.textContent = r.alive ? 'Online' : 'Offline';
+        }));
+    }
+}
+
+function refreshPing() { pingAll(); }
+
+// Load screenshots
+document.querySelectorAll('img[data-src]').forEach(img => {
+    img.src = img.getAttribute('data-src');
+    img.removeAttribute('data-src');
+});
+
+// Auto-refresh screenshots tiap 5 detik
+setInterval(() => {
+    document.querySelectorAll('.mon-card .preview img').forEach(img => {
+        img.src = img.src.split('?')[0] + '?t=' + Date.now();
+    });
+}, 5000);
+
+    pingAll();
+    setInterval(pingAll, 15000);
+</script>
+
+<%- include('partials/footer') %>

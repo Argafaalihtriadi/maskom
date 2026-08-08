@@ -1,0 +1,40 @@
+﻿{
+    "Hostname":  "DESKTOP-U5ATD0L",
+    "Timestamp":  "2026-07-23 00:41:52",
+    "Mode":  "AuditAndFix",
+    "Adapters":  [
+                     {
+                         "Name":  "Wi-Fi",
+                         "WakeOnMagicPacket":  "Enabled (diperbaiki)",
+                         "EnergyEfficientEth":  "?",
+                         "DeviceWakeEnabled":  false,
+                         "Actions":  [
+                                         "WakeOnMagicPacket diaktifkan",
+                                         "Diizinkan sebagai wake source"
+                                     ]
+                     },
+                     {
+                         "Name":  "Ethernet",
+                         "WakeOnMagicPacket":  "?",
+                         "EnergyEfficientEth":  "?",
+                         "DeviceWakeEnabled":  true,
+                         "Actions":  [
+
+                                     ]
+                     }
+                 ],
+    "RemoteShutdown":  {
+                           "FirewallSMB":  "Enabled",
+                           "RemoteUAC":  "?",
+                           "RemoteRegistry":  "?",
+                           "LimitBlankPassword":  "0 (OK)",
+                           "Actions":  [
+
+                                       ]
+                       },
+    "FastStartup":  "Disabled",
+    "ShareFolder":  "Exists",
+    "WMI":  "Windows Management Instrumentation (DCOM-In): OK; Windows Management Instrumentation (WMI-In): OK",
+    "AdminAccount":  "Enabled",
+    "AgentInstalled":  "Installed"
+}

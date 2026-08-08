@@ -3,16 +3,35 @@
 <!-- Viewport Content -->
 <div class="flex-1 overflow-y-auto custom-scrollbar bg-surface p-lg relative">
 <!-- Page Header -->
-<div class="flex justify-between items-end mb-8">
+<div class="flex justify-between items-start mb-8">
 <div>
 <h2 class="font-headline-md text-headline-md text-on-surface">Inventaris Komputer</h2>
 <p class="text-on-surface-variant font-body-md mt-1">Kelola dan pantau semua aset perangkat keras di seluruh organisasi.</p>
+<!-- Status sync badge -->
+<div class="mt-2">
+<% if (syncState && syncState.lastSyncAt) { %>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono-data border
+    <%= syncState.lastSyncStatus === 'success' ? 'bg-status-success/10 text-status-success border-status-success/20' : 'bg-status-error/10 text-status-error border-status-error/20' %>">
+<span class="material-symbols-outlined text-xs"><%= syncState.lastSyncStatus === 'success' ? 'cloud_done' : 'cloud_off' %></span>
+Sync FTP: <%= syncState.lastSyncMessage %> &bull; <%= new Date(syncState.lastSyncAt).toLocaleString('id-ID') %>
+</span>
+<% } else { %>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono-data border border-outline-variant text-on-surface-variant">
+<span class="material-symbols-outlined text-xs">cloud_off</span>
+Belum pernah sync dari FTP
+</span>
+<% } %>
 </div>
-<div class="flex gap-3">
+</div>
+<div class="flex gap-3 flex-wrap justify-end">
 <div class="relative focus-within:ring-2 focus-within:ring-primary/20 rounded-xl">
 <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
 <input id="searchInput" class="bg-surface-container-lowest border border-outline-variant rounded-xl pl-10 pr-4 py-2 w-64 text-sm focus:ring-1 focus:ring-primary focus:border-primary text-on-surface transition-all" placeholder="Cari perangkat..." type="text"/>
 </div>
+<button id="inv-sync-btn" onclick="syncFtpInventory()" title="Ambil data terbaru dari FTP" class="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-primary/40 text-primary rounded-xl hover:bg-primary/10 transition-colors font-label-md">
+<span id="inv-sync-icon" class="material-symbols-outlined text-base">sync</span>
+<span id="inv-sync-label">Sync FTP</span>
+</button>
 <button onclick="document.getElementById('csvFileInput').click()" class="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-xl text-on-surface hover:bg-surface-container-high transition-colors">
 <span class="material-symbols-outlined text-base">upload</span>
 <span class="font-label-md">Impor CSV</span>
@@ -20,8 +39,13 @@
 <input type="file" id="csvFileInput" accept=".csv" class="hidden">
 <button onclick="exportCSV()" class="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-xl text-on-surface hover:bg-surface-container-high transition-colors">
 <span class="material-symbols-outlined text-base">download</span>
-<span class="font-label-md">Ekspor CSV</span>
+<span class="font-label-md">Ekspor CSV (Ringkas)</span>
 </button>
+<a href="/export" class="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-emerald-500/50 rounded-xl text-emerald-700 hover:bg-emerald-50 transition-colors">
+<span class="material-symbols-outlined text-base text-emerald-600">summarize</span>
+<span class="font-label-md font-semibold">Laporan Lengkap</span>
+</a>
+
 <button onclick="openModal()" class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-xl font-label-md hover:opacity-90 transition-colors">
 <span class="material-symbols-outlined text-base">add</span>
 <span>Tambah Aset</span>
@@ -29,39 +53,67 @@
 </div>
 </div>
 <!-- Filters Bar -->
+<% 
+    // Ekstrak nilai unik dari data aktual untuk filter dropdown
+    const uniqueDepartemen = [];
+    const uniqueOS = [];
+    if(typeof devices !== 'undefined' && devices.length > 0) {
+        devices.forEach(function(d) {
+            const dep = d.data['Departemen'];
+            const os = d.data['Sistem Operasi'];
+            if(dep && dep !== '-' && !uniqueDepartemen.includes(dep)) uniqueDepartemen.push(dep);
+            if(os && !uniqueOS.includes(os)) {
+                // Ambil versi OS yang lebih pendek untuk ditampilkan sebagai filter
+                const osShort = os.split(' ').slice(0,4).join(' ');
+                if(!uniqueOS.includes(osShort)) uniqueOS.push(osShort);
+            }
+        });
+        uniqueDepartemen.sort();
+        uniqueOS.sort();
+    }
+%>
 <div class="grid grid-cols-4 gap-4 mb-8 bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-sm">
 <div>
 <label class="block text-label-sm text-on-surface-variant mb-2">Departemen</label>
-<select class="w-full bg-surface-container-low border border-outline-variant rounded-lg text-on-surface text-sm py-2 px-3 focus:ring-1 focus:ring-primary focus:border-primary">
-<option>Semua Departemen</option>
-<option>Teknik</option>
-<option>Pemasaran</option>
-<option>Keuangan</option>
-<option>SDM</option>
+<select id="filterDepartemen" onchange="applyFilters()" class="w-full bg-surface-container-low border border-outline-variant rounded-lg text-on-surface text-sm py-2 px-3 focus:ring-1 focus:ring-primary focus:border-primary">
+<option value="">Semua Departemen</option>
+<% uniqueDepartemen.forEach(function(dep) { %>
+<option value="<%= dep %>"><%= dep %></option>
+<% }); %>
 </select>
 </div>
 <div>
 <label class="block text-label-sm text-on-surface-variant mb-2">Tipe OS</label>
-<select class="w-full bg-surface-container-low border border-outline-variant rounded-lg text-on-surface text-sm py-2 px-3 focus:ring-1 focus:ring-primary focus:border-primary">
-<option>Semua Sistem Operasi</option>
-<option>Windows 11 Pro</option>
-<option>Windows 10 Enterprise</option>
-<option>macOS Sonoma</option>
-<option>Ubuntu 22.04 LTS</option>
+<select id="filterOS" onchange="applyFilters()" class="w-full bg-surface-container-low border border-outline-variant rounded-lg text-on-surface text-sm py-2 px-3 focus:ring-1 focus:ring-primary focus:border-primary">
+<option value="">Semua Sistem Operasi</option>
+<% uniqueOS.forEach(function(os) { %>
+<option value="<%= os %>"><%= os %></option>
+<% }); %>
 </select>
 </div>
 <div>
 <label class="block text-label-sm text-on-surface-variant mb-2">Status</label>
-<select class="w-full bg-surface-container-low border border-outline-variant rounded-lg text-on-surface text-sm py-2 px-3 focus:ring-1 focus:ring-primary focus:border-primary">
-<option>Semua Status</option>
-<option>Aktif</option>
-<option>Siaga</option>
-<option>Tidak Aktif</option>
+<select id="filterStatus" onchange="applyFilters()" class="w-full bg-surface-container-low border border-outline-variant rounded-lg text-on-surface text-sm py-2 px-3 focus:ring-1 focus:ring-primary focus:border-primary">
+<option value="">Semua Status</option>
+<option value="aktif">Aktif</option>
+<option value="siaga">Siaga</option>
+<option value="tidak aktif">Tidak Aktif</option>
 </select>
 </div>
 <div class="flex items-end">
-<button class="w-full py-2 bg-surface-container-high text-on-surface-variant border border-outline-variant rounded-lg font-label-md hover:bg-outline-variant transition-all">Bersihkan Filter</button>
+<button id="btnClearFilter" onclick="clearFilters()" class="w-full py-2 bg-surface-container-high text-on-surface-variant border border-outline-variant rounded-lg font-label-md hover:bg-outline-variant transition-all flex items-center justify-center gap-1.5">
+<span class="material-symbols-outlined text-base">filter_alt_off</span>
+Bersihkan Filter
+</button>
 </div>
+</div>
+<!-- Filter counter badge -->
+<div id="filterBadge" class="hidden mb-4 flex items-center gap-2">
+  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-semibold border border-primary/20">
+    <span class="material-symbols-outlined text-sm">filter_list</span>
+    <span id="filterBadgeText"></span>
+  </span>
+  <span id="filterResultCount" class="text-on-surface-variant text-sm"></span>
 </div>
 <!-- Inventory Table -->
 <div class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden shadow-sm">
@@ -290,13 +342,76 @@ function processCSV(csvText) {
     }).catch(function() { alert('Terjadi kesalahan saat upload.'); });
 }
 
-document.getElementById('searchInput').addEventListener('keyup', function() {
-    var filter = this.value.toLowerCase();
-    var rows = document.querySelectorAll('#inventoryBody tr:not(#empty-row)');
-    rows.forEach(function(row) {
-        row.style.display = row.textContent.toLowerCase().includes(filter) ? '' : 'none';
-    });
+// =============================================
+// FILTER & PENCARIAN LANJUTAN
+// =============================================
+
+// Data per-baris untuk filter presisi (dari data EJS)
+const rowFilterData = {};
+document.querySelectorAll('#inventoryBody tr:not(#empty-row)').forEach(function(row) {
+    const cells = row.querySelectorAll('td');
+    // Kolom: 0=Nama, 1=DAT, 2=Serial, 3=Departemen, 4=User, 5=IP, 6=OS, 7=RAM, 8=Storage, 9=Status
+    rowFilterData[row.rowIndex] = {
+        text: row.textContent.toLowerCase(),
+        departemen: cells[3] ? cells[3].textContent.trim().toLowerCase() : '',
+        os: cells[6] ? cells[6].textContent.trim().toLowerCase() : '',
+        status: cells[9] ? cells[9].textContent.trim().toLowerCase() : 'aktif'
+    };
 });
+
+function applyFilters() {
+    const keyword = (document.getElementById('searchInput').value || '').toLowerCase();
+    const filterDep = (document.getElementById('filterDepartemen').value || '').toLowerCase();
+    const filterOS = (document.getElementById('filterOS').value || '').toLowerCase();
+    const filterStatus = (document.getElementById('filterStatus').value || '').toLowerCase();
+
+    let visibleCount = 0;
+    const rows = document.querySelectorAll('#inventoryBody tr:not(#empty-row)');
+    rows.forEach(function(row) {
+        const d = rowFilterData[row.rowIndex];
+        if (!d) { row.style.display = ''; return; }
+
+        const matchKeyword = !keyword || d.text.includes(keyword);
+        const matchDep = !filterDep || d.departemen.includes(filterDep);
+        const matchOS = !filterOS || d.os.includes(filterOS);
+        const matchStatus = !filterStatus || d.status.includes(filterStatus);
+
+        const visible = matchKeyword && matchDep && matchOS && matchStatus;
+        row.style.display = visible ? '' : 'none';
+        if (visible) visibleCount++;
+    });
+
+    // Update empty state
+    const emptyRow = document.getElementById('empty-row');
+    if (emptyRow) emptyRow.style.display = visibleCount === 0 ? '' : 'none';
+
+    // Update badge
+    const isFiltered = keyword || filterDep || filterOS || filterStatus;
+    const badge = document.getElementById('filterBadge');
+    if (isFiltered) {
+        badge.classList.remove('hidden');
+        const parts = [];
+        if (keyword) parts.push('"' + keyword + '"');
+        if (filterDep) parts.push('Departemen: ' + filterDep);
+        if (filterOS) parts.push('OS: ' + filterOS);
+        if (filterStatus) parts.push('Status: ' + filterStatus);
+        document.getElementById('filterBadgeText').textContent = parts.join(' · ');
+        document.getElementById('filterResultCount').textContent = visibleCount + ' perangkat ditemukan';
+    } else {
+        badge.classList.add('hidden');
+    }
+}
+
+function clearFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('filterDepartemen').value = '';
+    document.getElementById('filterOS').value = '';
+    document.getElementById('filterStatus').value = '';
+    applyFilters();
+}
+
+// Hubungkan search input ke applyFilters
+document.getElementById('searchInput').addEventListener('keyup', applyFilters);
 
 var modal = document.getElementById('deviceModal');
 function openModal(filename, hostname, ip, mac, os, dat, serial_number, departemen, pengguna) {
@@ -366,6 +481,70 @@ function deleteDevice(filename) {
         }).catch(function() { alert('Terjadi kesalahan jaringan'); });
     }
 }
+
+// =============================================
+// FTP Sync dari halaman Inventaris
+// =============================================
+let invSyncing = false;
+async function syncFtpInventory() {
+    if (invSyncing) return;
+    const btn = document.getElementById('inv-sync-btn');
+    const icon = document.getElementById('inv-sync-icon');
+    const label = document.getElementById('inv-sync-label');
+
+    invSyncing = true;
+    btn.disabled = true;
+    icon.style.animation = 'spin 1s linear infinite';
+    label.textContent = 'Menyinkronkan...';
+
+    try {
+        const res = await fetch('/api/ftp/sync', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            showInvToast('✅ ' + data.message, 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showInvToast('⚠️ ' + data.message, 'error');
+        }
+    } catch(e) {
+        showInvToast('❌ Tidak dapat terhubung ke server.', 'error');
+    } finally {
+        invSyncing = false;
+        btn.disabled = false;
+        icon.style.animation = '';
+        label.textContent = 'Sync FTP';
+    }
+}
+
+function showInvToast(message, type) {
+    const existing = document.getElementById('inv-toast');
+    if (existing) existing.remove();
+    const toast = document.createElement('div');
+    toast.id = 'inv-toast';
+    toast.style.cssText = `
+        position:fixed;bottom:2rem;right:2rem;z-index:9999;
+        padding:1rem 1.5rem;border-radius:1rem;
+        font-size:0.875rem;font-weight:500;
+        box-shadow:0 8px 32px rgba(0,0,0,0.25);
+        backdrop-filter:blur(12px);
+        animation:slideInToast 0.3s ease;
+        max-width:380px;
+        background:${type==='success'?'rgba(34,197,94,0.15)':'rgba(239,68,68,0.15)'};
+        border:1px solid ${type==='success'?'rgba(34,197,94,0.4)':'rgba(239,68,68,0.4)'};
+        color:${type==='success'?'#22c55e':'#ef4444'};
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(()=>{ toast.style.animation='fadeOutToast 0.3s ease forwards'; setTimeout(()=>toast.remove(),300); },4000);
+}
+
+const invStyle = document.createElement('style');
+invStyle.textContent = `
+    @keyframes spin { from{transform:rotate(0deg)}to{transform:rotate(360deg)} }
+    @keyframes slideInToast { from{opacity:0;transform:translateY(1rem)}to{opacity:1;transform:translateY(0)} }
+    @keyframes fadeOutToast { from{opacity:1}to{opacity:0;transform:translateY(1rem)} }
+`;
+document.head.appendChild(invStyle);
 </script>
 
 <%- include('partials/footer') %>

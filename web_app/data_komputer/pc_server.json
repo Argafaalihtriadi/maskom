@@ -1,0 +1,21 @@
+{
+    "Sistem Operasi": "Windows 11",
+    "Waktu Scan (Lokal)": "2026-07-22T15:08:23.083Z",
+    "User Session (Whoami)": {
+        "Username": "Manual Entry",
+        "Hostname": "PC SERVER"
+    },
+    "LAN/Network Card": [
+        {
+            "Description": "Manual Entry Adapter",
+            "Physical Address (MAC)": "70-19-88-87-0C-62",
+            "Status Hardware": "Connected",
+            "IPv4 Address": "192.168.18.15",
+            "Subnet Mask": "255.255.255.0"
+        }
+    ],
+    "DAT": "",
+    "Serial Number": "",
+    "Departemen": "",
+    "Pengguna": "ARGA"
+}

@@ -50,9 +50,25 @@
         <label for="selectAll" class="text-sm font-label-md text-on-surface cursor-pointer">Pilih Semua</label>
     </div>
 </div>
-<div class="relative mb-4">
-    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
-    <input id="searchWol" type="text" class="w-full bg-surface-container border border-outline-variant rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Cari hostname atau IP...">
+<div class="flex gap-2 mb-4">
+    <div class="relative flex-1">
+        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+        <input id="searchWol" type="text" class="w-full bg-surface-container border border-outline-variant rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Cari hostname atau IP...">
+    </div>
+    <select id="filterDepartemen" class="bg-surface-container border border-outline-variant rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary min-w-[150px]">
+        <option value="">Semua Bagian</option>
+        <% 
+            const depts = new Set();
+            if(typeof devices !== 'undefined') {
+                devices.forEach(d => {
+                    if(d.data.Departemen) depts.add(d.data.Departemen);
+                });
+            }
+            Array.from(depts).sort().forEach(dept => { 
+        %>
+            <option value="<%= dept %>"><%= dept %></option>
+        <% }); %>
+    </select>
 </div>
 
 <div class="flex-1 overflow-y-auto custom-scrollbar border border-outline-variant rounded-lg" id="deviceList">
@@ -74,12 +90,18 @@
         const hostname = userInfo ? userInfo.Hostname : device.filename;
         if(macAddress) {
     %>
-    <label class="device-item flex items-center justify-between p-3 border-b border-outline-variant/30 hover:bg-surface-container-low cursor-pointer transition-colors">
+    <label class="device-item flex items-center justify-between p-3 border-b border-outline-variant/30 hover:bg-surface-container-low cursor-pointer transition-colors" data-departemen="<%= device.data.Departemen || '' %>">
         <div class="flex items-center gap-3">
             <input type="checkbox" value="<%= macAddress %>" data-ip="<%= ipAddress %>" data-hostname="<%= hostname %>" class="device-checkbox rounded text-primary focus:ring-primary h-4 w-4">
             <div>
                 <p class="font-bold text-sm text-on-surface hostname-label"><%= hostname %></p>
-                <p class="text-xs text-on-surface-variant font-mono ip-label"><%= ipAddress %></p>
+                <div class="flex items-center gap-2 mt-0.5">
+                    <span class="ping-indicator w-2 h-2 rounded-full bg-on-surface-variant/30 shrink-0" title="Menunggu ping..." data-ping-ip="<%= ipAddress %>"></span>
+                    <p class="text-xs text-on-surface-variant font-mono ip-label"><%= ipAddress %></p>
+                    <% if(device.data.Departemen) { %>
+                        <span class="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-sm whitespace-nowrap"><%= device.data.Departemen %></span>
+                    <% } %>
+                </div>
             </div>
         </div>
         <span class="text-xs text-on-surface-variant font-mono"><%= macAddress %></span>
@@ -162,22 +184,41 @@
         cb.addEventListener('change', updateSelectedCount);
     });
 
-    // Search Logic
-    document.getElementById('searchWol').addEventListener('keyup', function() {
-        const filter = this.value.toLowerCase();
-        const items = document.querySelectorAll('.device-item');
+    // Filter & Search Logic
+    const searchWol = document.getElementById('searchWol');
+    const filterDepartemen = document.getElementById('filterDepartemen');
+    const items = document.querySelectorAll('.device-item');
+
+    function applyFilters() {
+        const keyword = searchWol.value.toLowerCase();
+        const dept = filterDepartemen.value;
+
         items.forEach(item => {
             const hostname = item.querySelector('.hostname-label').textContent.toLowerCase();
             const ip = item.querySelector('.ip-label').textContent.toLowerCase();
-            if(hostname.includes(filter) || ip.includes(filter)) {
+            const itemDept = item.getAttribute('data-departemen');
+            
+            const matchKeyword = hostname.includes(keyword) || ip.includes(keyword);
+            const matchDept = dept === '' || itemDept === dept;
+
+            if (matchKeyword && matchDept) {
                 item.style.display = 'flex';
             } else {
                 item.style.display = 'none';
             }
         });
-        // uncheck selectAll when filtering
-        selectAllCheckbox.checked = false; 
-    });
+        
+        selectAllCheckbox.checked = false;
+        deviceCheckboxes.forEach(cb => {
+            if (cb.closest('.device-item').style.display === 'none') {
+                cb.checked = false;
+            }
+        });
+        updateSelectedCount();
+    }
+
+    searchWol.addEventListener('keyup', applyFilters);
+    filterDepartemen.addEventListener('change', applyFilters);
 
 
     // WOL execution logic
@@ -258,6 +299,58 @@
             lastLine.style.opacity = lastLine.style.opacity === '0' ? '1' : '0';
         }
     }, 500);
+
+    // Real-time Ping Polling
+    async function doPing(ip) {
+        try {
+            const res = await fetch(`/api/ping?ip=${ip}`);
+            const data = await res.json();
+            return data;
+        } catch (e) {
+            return { success: false };
+        }
+    }
+
+    async function pingVisibleDevices() {
+        // Find visible devices and their ping indicators
+        const visibleIndicators = Array.from(document.querySelectorAll('.device-item'))
+            .filter(item => item.style.display !== 'none')
+            .map(item => item.querySelector('.ping-indicator'))
+            .filter(indicator => indicator);
+        
+        // Execute sequentially or in small batches
+        const batchSize = 5;
+        for (let i = 0; i < visibleIndicators.length; i += batchSize) {
+            const batch = visibleIndicators.slice(i, i + batchSize);
+            await Promise.all(batch.map(async (indicator) => {
+                const ip = indicator.getAttribute('data-ping-ip');
+                if(ip && ip !== 'Unknown' && ip !== '0.0.0.0') {
+                    // indicate pinging
+                    indicator.classList.remove('bg-status-success', 'bg-status-error', 'bg-on-surface-variant/30');
+                    indicator.classList.add('bg-primary/50', 'animate-pulse');
+                    
+                    const result = await doPing(ip);
+                    
+                    indicator.classList.remove('bg-primary/50', 'animate-pulse');
+                    if (result.success && result.alive) {
+                        indicator.classList.add('bg-status-success');
+                        indicator.title = `Online (${result.time}ms)`;
+                    } else {
+                        indicator.classList.add('bg-status-error');
+                        indicator.title = 'Offline';
+                    }
+                }
+            }));
+        }
+    }
+    
+    // Initial ping and start interval (10 seconds)
+    pingVisibleDevices();
+    setInterval(pingVisibleDevices, 10000);
+
+    // Also trigger ping when filters change to immediately ping newly visible items
+    filterDepartemen.addEventListener('change', () => { setTimeout(pingVisibleDevices, 500); });
+    searchWol.addEventListener('keyup', () => { setTimeout(pingVisibleDevices, 500); });
 </script>
 
 <%- include('partials/footer') %>

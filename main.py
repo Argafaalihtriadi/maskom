@@ -561,8 +561,366 @@ def main():
     if not ip_onboard or ip_onboard == "Disconnected / No IP":
         ip_onboard = "OFFLINE-NO-IP"
 
-    # Ganti titik menjadi tanda hubung (misal: 192.168.32.224)
-    format_nama_ip = ip_onboard.replace(".",".")
+    # Pertahankan format IP dengan titik sebagai nama file (tidak diganti strip), misal: 192.168.32.224.json
+    format_nama_ip = ip_onboard
+    nama_file_json = f"{format_nama_ip}.json"
+    
+    # Susun semua spesifikasi ke dalam satu dictionary JSON
+    full_specs = {
+        "User Session (Whoami)": {
+            "Username": current_username,
+            "Hostname": current_hostname,
+            "Full Identity": whoami_style
+        },
+        "Sistem Operasi": platform.system() + " " + platform.release() + " (" + platform.architecture()[0] + ")",
+        "CPU": cpu_info,
+        "Mainboard": get_mainboard_z_style(),
+        "Memory & SPD": get_memory_z_style(),
+        "Graphics": get_gpu_detail(),
+        "Penyimpanan": get_storage_detail(),
+        "LAN/Network Card": lan_cards
+    }
+    
+    # 3. SIMPAN KE FILE JSON LOKAL
+    nama_file_lengkap = os.path.join(base_dir, nama_file_json)
+    with open(nama_file_lengkap, "w", encoding="utf-8") as f:
+        json.dump(full_specs, f, indent=4, ensure_ascii=False)
+        
+    print("\n[SUKSES] Semua spesifikasi mendalam telah berhasil diekstrak!")
+    print(f"File lokal : {nama_file_json}")
+    print(f"Lokasi     : {nama_file_lengkap}")
+    print("==========================================================")
+    
+    # 4. KIRIM OTOMATIS KE SERVER FTP TARGET
+    upload_to_ftp(nama_file_lengkap)
+    print("==========================================================")
+    
+    input("\nTekan ENTER untuk keluar...")
+
+
+# ===========================================================================
+# MODE DAEMON — Agen WebSocket Realtime
+# Jalankan dengan: python main.py --daemon --server ws://192.168.x.x:3000
+# Agen akan terhubung terus ke server dan menunggu instruksi jarak jauh.
+# ===========================================================================
+
+def collect_specs():
+    """
+    Kumpulkan semua spesifikasi komputer lokal.
+    Mengembalikan dictionary spek lengkap dan nama file JSON (berdasarkan IP).
+    """
+    current_username = getpass.getuser()
+    current_hostname = platform.node()
+    whoami_style      = f"{current_hostname}\\{current_username}"
+
+    cpu_info  = get_cpu_z_style()
+    lan_cards = get_lan_card_detail()
+
+    # Tentukan IP untuk nama file
+    ip_onboard = ""
+    for card in lan_cards:
+        desc    = str(card.get("Description (Nama Perangkat)", "")).lower()
+        ip_addr = card.get("IPv4 Address", "Disconnected / No IP")
+        if "intel" in desc and "ethernet" in desc and ip_addr != "Disconnected / No IP":
+            ip_onboard = ip_addr
+            break
+    if not ip_onboard:
+        for card in lan_cards:
+            ip_addr = card.get("IPv4 Address", "Disconnected / No IP")
+            if ip_addr != "Disconnected / No IP":
+                ip_onboard = ip_addr
+                break
+    if not ip_onboard or ip_onboard == "Disconnected / No IP":
+        ip_onboard = "OFFLINE-NO-IP"
+
+    full_specs = {
+        "User Session (Whoami)": {
+            "Username":     current_username,
+            "Hostname":     current_hostname,
+            "Full Identity": whoami_style
+        },
+        "Sistem Operasi": platform.system() + " " + platform.release() + " (" + platform.architecture()[0] + ")",
+        "CPU":       cpu_info,
+        "Mainboard": get_mainboard_z_style(),
+        "Memory & SPD": get_memory_z_style(),
+        "Graphics":  get_gpu_detail(),
+        "Penyimpanan": get_storage_detail(),
+        "LAN/Network Card": lan_cards
+    }
+    return full_specs, f"{ip_onboard}.json"
+
+
+def deploy_folder(url, zip_name, exec_rel_path, exec_args="", extract_root=None):
+    """
+    Download file .zip dari URL server, ekstrak ke extract_root,
+    lalu jalankan file .exe sesuai exec_rel_path di dalam folder hasil ekstraksi.
+
+    Args:
+        url           : URL lengkap file .zip   (misal http://192.168.x.x:3000/temp-upload/app.zip)
+        zip_name      : Nama file zip           (misal app.zip)
+        exec_rel_path : Path relatif .exe dalam zip (misal MyApp/launcher.exe)
+        exec_args     : Argumen tambahan untuk .exe  (opsional)
+        extract_root  : Folder ekstraksi (default C:\\MaskomDeploy)
+    """
+    import urllib.request
+    import zipfile
+    import tempfile
+
+    if extract_root is None:
+        extract_root = os.path.join("C:\\", "MaskomDeploy")
+
+    os.makedirs(extract_root, exist_ok=True)
+
+    # 1. Download zip ke tempdir
+    tmp_zip = os.path.join(tempfile.gettempdir(), zip_name)
+    try:
+        print(f"[DEPLOY] Mengunduh {url} ...")
+        urllib.request.urlretrieve(url, tmp_zip)
+        print(f"[DEPLOY] Download selesai -> {tmp_zip}")
+    except Exception as e:
+        raise RuntimeError(f"Gagal mengunduh file zip: {e}")
+
+    # 2. Ekstrak zip
+    extract_dir = os.path.join(extract_root, os.path.splitext(zip_name)[0])
+    try:
+        with zipfile.ZipFile(tmp_zip, "r") as zf:
+            zf.extractall(extract_dir)
+        print(f"[DEPLOY] Diekstrak ke {extract_dir}")
+    except Exception as e:
+        raise RuntimeError(f"Gagal mengekstrak zip: {e}")
+    finally:
+        try:
+            os.remove(tmp_zip)
+        except Exception:
+            pass
+
+    # 3. Jalankan .exe target
+    exe_path = os.path.join(extract_dir, exec_rel_path.replace("/", os.sep))
+    if not os.path.isfile(exe_path):
+        raise RuntimeError(f"File .exe tidak ditemukan: {exe_path}")
+
+    try:
+        cmd = [exe_path]
+        if exec_args:
+            cmd += exec_args.split()
+        proc = subprocess.Popen(cmd, cwd=os.path.dirname(exe_path))
+        print(f"[DEPLOY] Menjalankan {exe_path} (PID: {proc.pid})")
+        return proc.pid
+    except Exception as e:
+        raise RuntimeError(f"Gagal menjalankan exe: {e}")
+
+
+def run_daemon(server_url):
+    """
+    Mode daemon: sambungkan WebSocket ke server MaskomApp dan tunggu instruksi.
+    Diperlukan: pip install websocket-client
+    """
+    try:
+        import websocket
+    except ImportError:
+        print("[DAEMON] ERROR: library 'websocket-client' tidak terinstal.")
+        print("         Jalankan: pip install websocket-client")
+        sys.exit(1)
+
+    current_hostname = platform.node()
+    current_ip = ""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        current_ip = s.getsockname()[0]
+        s.close()
+    except Exception:
+        current_ip = "Unknown"
+
+    AGENT_TOKEN = os.environ.get("MASKOM_AGENT_TOKEN", "maskom-agent-2024")
+
+    print(f"[DAEMON] Memulai agen WebSocket...")
+    print(f"[DAEMON] Hostname : {current_hostname}")
+    print(f"[DAEMON] IP       : {current_ip}")
+    print(f"[DAEMON] Server   : {server_url}")
+
+    ws_url = server_url.rstrip("/") + f"/ws/agent/{current_hostname}"
+
+    def on_open(ws):
+        reg = json.dumps({
+            "type":     "register",
+            "hostname": current_hostname,
+            "ip":       current_ip,
+            "token":    AGENT_TOKEN
+        })
+        ws.send(reg)
+        print(f"[DAEMON] Terhubung & registrasi dikirim.")
+
+    def on_message(ws, message):
+        try:
+            data = json.loads(message)
+        except Exception:
+            print(f"[DAEMON] Pesan tidak valid: {message}")
+            return
+
+        action = data.get("action")
+        req_id = data.get("req_id", "")
+        print(f"[DAEMON] Perintah diterima: {action} (req_id={req_id})")
+
+        def send_status(status, payload=None):
+            resp = {
+                "type":     "agent_response",
+                "req_id":   req_id,
+                "hostname": current_hostname,
+                "status":   status
+            }
+            if payload:
+                resp.update(payload)
+            try:
+                ws.send(json.dumps(resp))
+            except Exception as e:
+                print(f"[DAEMON] Gagal kirim respons: {e}")
+
+        # --- Aksi: scan_spec ---
+        if action == "scan_spec":
+            try:
+                send_status("scanning")
+                specs, fname = collect_specs()
+
+                # Simpan file lokal
+                if getattr(sys, 'frozen', False):
+                    base_dir = os.path.dirname(sys.executable)
+                else:
+                    base_dir = os.path.dirname(os.path.abspath(__file__))
+
+                local_path = os.path.join(base_dir, fname)
+                with open(local_path, "w", encoding="utf-8") as f:
+                    json.dump(specs, f, indent=4, ensure_ascii=False)
+
+                # Upload ke FTP
+                upload_to_ftp(local_path)
+
+                send_status("success", {
+                    "message": f"Scan selesai. File {fname} berhasil diperbarui dan dikirim ke FTP.",
+                    "filename": fname
+                })
+            except Exception as e:
+                send_status("error", {"message": str(e)})
+
+        # --- Aksi: deploy_folder ---
+        elif action == "deploy_folder":
+            url           = data.get("url")
+            zip_name      = data.get("zip_name")
+            exec_rel_path = data.get("exec_path", "")
+            exec_args     = data.get("exec_args", "")
+            extract_root  = data.get("extract_root", None)
+
+            if not url or not zip_name or not exec_rel_path:
+                send_status("error", {"message": "Parameter deploy tidak lengkap (url/zip_name/exec_path)."})
+                return
+
+            try:
+                send_status("downloading")
+                pid = deploy_folder(url, zip_name, exec_rel_path, exec_args, extract_root)
+                send_status("success", {
+                    "message": f"Program '{exec_rel_path}' berhasil dijalankan (PID: {pid}).",
+                    "pid": pid
+                })
+            except Exception as e:
+                send_status("error", {"message": str(e)})
+
+        else:
+            send_status("error", {"message": f"Aksi tidak dikenal: {action}"})
+
+    def on_error(ws, error):
+        print(f"[DAEMON] WebSocket error: {error}")
+
+    def on_close(ws, code, msg):
+        print(f"[DAEMON] Koneksi terputus (code={code}). Mencoba reconnect dalam 10 detik...")
+
+    import time
+    while True:
+        try:
+            ws = websocket.WebSocketApp(
+                ws_url,
+                on_open=on_open,
+                on_message=on_message,
+                on_error=on_error,
+                on_close=on_close
+            )
+            ws.run_forever(ping_interval=30, ping_timeout=10)
+        except Exception as e:
+            print(f"[DAEMON] Koneksi gagal: {e}")
+
+        time.sleep(10)
+        print(f"[DAEMON] Reconnecting ke {ws_url} ...")
+
+
+def main():
+    multiprocessing.freeze_support()
+
+    # --- Cek argumen CLI ---
+    if "--daemon" in sys.argv:
+        # Ambil --server ws://... dari argumen
+        server_url = "ws://192.168.33.181:3000"
+        for i, arg in enumerate(sys.argv):
+            if arg == "--server" and i + 1 < len(sys.argv):
+                server_url = sys.argv[i + 1]
+                break
+        run_daemon(server_url)
+        return
+
+    print("==========================================================")
+    print(" SPECHECK - Spesifikasi Komputer & Wake on LAN Manager ")
+    print("==========================================================")
+    print(" 1. Cek & Kirim Spesifikasi Komputer Ini   (Mode Client)")
+    print(" 2. Kelola Wake on LAN - Nyalakan Komputer Lain (Mode Admin)")
+    print("==========================================================")
+    mode = input("Masukkan pilihan (1/2) [default 1]: ").strip()
+
+    if mode == "2":
+        jalankan_mode_wol()
+        return
+
+    print("\n==========================================================")
+    print(" Mengekstrak Spesifikasi Komputer & Jaringan... ")
+    print(" Mohon tunggu beberapa saat, jangan tutup jendela ini... ")
+    print("==========================================================")
+    
+    if getattr(sys, 'frozen', False):
+        base_dir = os.path.dirname(sys.executable)
+    else:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    # 1. PENCARIAN DATA SEPERTI WHOAMI (Username dan Hostname)
+    current_username = getpass.getuser()
+    current_hostname = platform.node()
+    whoami_style = f"{current_hostname}\\{current_username}"
+    
+    cpu_info = get_cpu_z_style()
+    lan_cards = get_lan_card_detail()
+    
+    # 2. STRATEGI GENERATE NAMA FILE BERDASARKAN IP INTEL CONNECTIONS ONBOARD
+    ip_onboard = ""
+    for card in lan_cards:
+        desc = str(card.get("Description (Nama Perangkat)", "")).lower()
+        ip_addr = card.get("IPv4 Address", "Disconnected / No IP")
+        
+        # Cari adapter yang merupakan Intel Ethernet dan sedang mendapatkan IP aktif
+        if "intel" in desc and "ethernet" in desc and ip_addr != "Disconnected / No IP":
+            ip_onboard = ip_addr
+            break
+            
+    # Fallback 1: Jika Intel Ethernet terpasang tapi kabelnya dicabut (tidak dapat IP),
+    # cari IP aktif pertama dari adapter LAN Kabel/WiFi apa saja yang tersedia.
+    if not ip_onboard:
+        for card in lan_cards:
+            ip_addr = card.get("IPv4 Address", "Disconnected / No IP")
+            if ip_addr != "Disconnected / No IP":
+                ip_onboard = ip_addr
+                break
+                
+    # Fallback 2: Jika komputer benar-benar offline / dicabut total dari jaringan lokal
+    if not ip_onboard or ip_onboard == "Disconnected / No IP":
+        ip_onboard = "OFFLINE-NO-IP"
+
+    # Pertahankan format IP dengan titik sebagai nama file (tidak diganti strip), misal: 192.168.32.224.json
+    format_nama_ip = ip_onboard
     nama_file_json = f"{format_nama_ip}.json"
     
     # Susun semua spesifikasi ke dalam satu dictionary JSON
@@ -598,4 +956,4 @@ def main():
     input("\nTekan ENTER untuk keluar...")
 
 if __name__ == '__main__':
-    main()
+    main()
