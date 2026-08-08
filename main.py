@@ -4,20 +4,408 @@ import platform
 import subprocess
 import sys
 import getpass
-import cpuinfo  # Pastikan sudah: pip install py-cpuinfo
-import psutil
 import re
 import multiprocessing
 import socket
 import glob
+import threading
+import ctypes
+import datetime
 from ftplib import FTP  # Library bawaan untuk transfer FTP
 
-# KONFIGURASI SERVER FTP (dipakai bareng oleh mode Client & mode Admin WOL)
-FTP_HOST = "192.168.33.181"
-FTP_USER = "dpd"
-FTP_PASS = "dpd"
-FTP_PORT = 21
-FTP_DIR = "/maskom"
+try:
+    import cpuinfo
+except ImportError:
+    cpuinfo = None
+
+try:
+    import psutil
+except ImportError:
+    psutil = None
+
+# GUI & System Tray Imports (Try/Except graceful fallback)
+try:
+    import tkinter as tk
+    from tkinter import messagebox, ttk
+    HAS_TKINTER = True
+except ImportError:
+    HAS_TKINTER = False
+
+try:
+    import pystray
+    from PIL import Image, ImageDraw
+    HAS_PYSTRAY = True
+except ImportError:
+    HAS_PYSTRAY = False
+
+def log_msg(msg):
+    """Catat pesan log ke console dan file agent.log."""
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    formatted = f"[{timestamp}] {msg}"
+    print(formatted)
+    try:
+        if getattr(sys, 'frozen', False):
+            base_dir = os.path.dirname(sys.executable)
+        else:
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+        log_path = os.path.join(base_dir, "agent.log")
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(formatted + "\n")
+    except Exception:
+        pass
+
+def is_admin():
+    """Periksa apakah aplikasi berjalan dengan hak Administrator."""
+    try:
+        return ctypes.windll.shell32.IsUserAnAdmin() != 0
+    except Exception:
+        return False
+
+def elevate_admin():
+    """Minta UAC Windows untuk elevate ke Administrator."""
+    if not is_admin() and sys.platform == 'win32':
+        try:
+            log_msg("Meminta UAC Windows Administrator privilege...")
+            params = " ".join([f'"{a}"' for a in sys.argv[1:]])
+            ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, params, None, 1)
+            sys.exit(0)
+        except Exception as e:
+            log_msg(f"Gagal elevate admin: {e}")
+
+# ==========================================================================
+# KONFIGURASI DINAMIS SERVER & FTP (Dapat Diubah via Form GUI)
+# ==========================================================================
+DEFAULT_CONFIG = {
+    "server_ip": "192.168.33.181",
+    "ws_port": 3000,
+    "ftp_host": "192.168.33.181",
+    "ftp_port": 21,
+    "ftp_user": "dpd",
+    "ftp_pass": "dpd",
+    "ftp_dir": "/maskom",
+    "agent_token": "maskom-agent-2024"
+}
+
+def get_config_path():
+    """Dapatkan path file agent_config.json lokal atau di Program Files."""
+    if getattr(sys, 'frozen', False):
+        base_dir = os.path.dirname(sys.executable)
+    else:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    local_cfg = os.path.join(base_dir, "agent_config.json")
+    if os.path.exists(local_cfg):
+        return local_cfg
+        
+    pf_cfg = os.path.join(r"C:\Program Files\MaskomAgent", "agent_config.json")
+    if os.path.exists(pf_cfg):
+        return pf_cfg
+        
+    return local_cfg
+
+def load_config():
+    """Muat konfigurasi dari agent_config.json atau default."""
+    cfg = DEFAULT_CONFIG.copy()
+    path = get_config_path()
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                saved = json.load(f)
+                cfg.update(saved)
+        except Exception as e:
+            print(f"[CONFIG WARN] Gagal membaca {path}: {e}")
+    return cfg
+
+def save_config(cfg):
+    """Simpan konfigurasi ke agent_config.json dan perbarui global variables."""
+    path = get_config_path()
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(cfg, f, indent=4)
+        apply_config(cfg)
+        return True, path
+    except Exception as e:
+        return False, str(e)
+
+# Global variables yang diupdate oleh apply_config()
+config = load_config()
+FTP_HOST = config.get("ftp_host", "192.168.33.181")
+FTP_USER = config.get("ftp_user", "dpd")
+FTP_PASS = config.get("ftp_pass", "dpd")
+FTP_PORT = int(config.get("ftp_port", 21))
+FTP_DIR = config.get("ftp_dir", "/maskom")
+SERVER_URL = f"ws://{config.get('server_ip', '192.168.33.181')}:{config.get('ws_port', 3000)}"
+
+def apply_config(cfg):
+    global config, FTP_HOST, FTP_USER, FTP_PASS, FTP_PORT, FTP_DIR, SERVER_URL
+    config = cfg
+    FTP_HOST = cfg.get("ftp_host", "192.168.33.181")
+    FTP_USER = cfg.get("ftp_user", "dpd")
+    FTP_PASS = cfg.get("ftp_pass", "dpd")
+    FTP_PORT = int(cfg.get("ftp_port", 21))
+    FTP_DIR = cfg.get("ftp_dir", "/maskom")
+    s_ip = cfg.get("server_ip", "192.168.33.181")
+    s_port = cfg.get("ws_port", 3000)
+    SERVER_URL = f"ws://{s_ip}:{s_port}"
+
+# ==========================================================================
+# FORM GUI PENGATURAN SERVER & FTP (Tkinter)
+# ==========================================================================
+def show_config_gui():
+    """Tampilkan jendela GUI Form Pengaturan Server & FTP."""
+    if not HAS_TKINTER:
+        print("[ERROR] Tkinter tidak tersedia di environment Python ini.")
+        return
+
+    cfg = load_config()
+    
+    root = tk.Tk()
+    root.title("Pengaturan Server & FTP - MaskomAgent")
+    root.geometry("460x520")
+    root.resizable(False, False)
+    
+    BG_COLOR = "#f7f9fb"
+    PRIMARY_COLOR = "#494bd6"
+    root.configure(bg=BG_COLOR)
+
+    # Header
+    header = tk.Frame(root, bg=PRIMARY_COLOR, height=60)
+    header.pack(fill="x")
+    header.pack_propagate(False)
+    
+    lbl_title = tk.Label(header, text="⚙️ Pengaturan Server & FTP MaskomAgent", fg="white", bg=PRIMARY_COLOR, font=("Segoe UI", 12, "bold"))
+    lbl_title.pack(pady=15)
+
+    # Container Form
+    form_frame = tk.Frame(root, bg=BG_COLOR, padx=25, pady=15)
+    form_frame.pack(fill="both", expand=True)
+
+    fields = {}
+
+    def create_field(parent, label_text, key, default_val, show_char=None):
+        lbl = tk.Label(parent, text=label_text, bg=BG_COLOR, font=("Segoe UI", 9, "bold"), fg="#333333")
+        lbl.pack(anchor="w", pady=(8, 2))
+        entry = tk.Entry(parent, font=("Segoe UI", 10), show=show_char, bd=1, relief="solid")
+        entry.insert(0, str(default_val))
+        entry.pack(fill="x", ipady=4)
+        fields[key] = entry
+
+    # Server IP & Port
+    row_server = tk.Frame(form_frame, bg=BG_COLOR)
+    row_server.pack(fill="x")
+    
+    lbl_s_ip = tk.Label(row_server, text="IP Server Web / WebSocket:", bg=BG_COLOR, font=("Segoe UI", 9, "bold"), fg="#333333")
+    lbl_s_ip.pack(anchor="w", pady=(4, 2))
+    entry_s_ip = tk.Entry(row_server, font=("Segoe UI", 10), bd=1, relief="solid")
+    entry_s_ip.insert(0, str(cfg.get("server_ip", "192.168.33.181")))
+    entry_s_ip.pack(side="left", fill="x", expand=True, ipady=4, padx=(0, 5))
+    fields["server_ip"] = entry_s_ip
+
+    lbl_ws_port = tk.Label(row_server, text="Port WS:", bg=BG_COLOR, font=("Segoe UI", 9, "bold"), fg="#333333")
+    lbl_ws_port.pack(side="left", padx=(5, 0))
+    entry_ws_port = tk.Entry(row_server, font=("Segoe UI", 10), width=6, bd=1, relief="solid")
+    entry_ws_port.insert(0, str(cfg.get("ws_port", 3000)))
+    entry_ws_port.pack(side="left", ipady=4)
+    fields["ws_port"] = entry_ws_port
+
+    # FTP Host & Port
+    row_ftp = tk.Frame(form_frame, bg=BG_COLOR)
+    row_ftp.pack(fill="x", pady=(10, 0))
+    
+    lbl_f_host = tk.Label(row_ftp, text="FTP Host / IP:", bg=BG_COLOR, font=("Segoe UI", 9, "bold"), fg="#333333")
+    lbl_f_host.pack(anchor="w", pady=(4, 2))
+    entry_f_host = tk.Entry(row_ftp, font=("Segoe UI", 10), bd=1, relief="solid")
+    entry_f_host.insert(0, str(cfg.get("ftp_host", "192.168.33.181")))
+    entry_f_host.pack(side="left", fill="x", expand=True, ipady=4, padx=(0, 5))
+    fields["ftp_host"] = entry_f_host
+
+    lbl_f_port = tk.Label(row_ftp, text="Port FTP:", bg=BG_COLOR, font=("Segoe UI", 9, "bold"), fg="#333333")
+    lbl_f_port.pack(side="left", padx=(5, 0))
+    entry_f_port = tk.Entry(row_ftp, font=("Segoe UI", 10), width=6, bd=1, relief="solid")
+    entry_f_port.insert(0, str(cfg.get("ftp_port", 21)))
+    entry_f_port.pack(side="left", ipady=4)
+    fields["ftp_port"] = entry_f_port
+
+    create_field(form_frame, "Username FTP:", "ftp_user", cfg.get("ftp_user", "dpd"))
+    create_field(form_frame, "Password FTP:", "ftp_pass", cfg.get("ftp_pass", "dpd"), show_char="*")
+    create_field(form_frame, "Folder Directory FTP:", "ftp_dir", cfg.get("ftp_dir", "/maskom"))
+
+    def test_connection():
+        s_ip = fields["server_ip"].get().strip()
+        ws_p = fields["ws_port"].get().strip()
+        f_host = fields["ftp_host"].get().strip()
+        f_port = fields["ftp_port"].get().strip()
+
+        ws_ok, ftp_ok = False, False
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(3)
+            sock.connect((s_ip, int(ws_p)))
+            sock.close()
+            ws_ok = True
+        except Exception:
+            ws_ok = False
+
+        try:
+            ftp = FTP()
+            ftp.connect(f_host, int(f_port), timeout=3)
+            ftp.login(fields["ftp_user"].get().strip(), fields["ftp_pass"].get().strip())
+            ftp.quit()
+            ftp_ok = True
+        except Exception:
+            ftp_ok = False
+
+        msg = f"Hasil Uji Koneksi:\n\n• WebSocket ({s_ip}:{ws_p}): {'🟢 TERHUBUNG' if ws_ok else '🔴 GAGAL'}\n• Server FTP ({f_host}:{f_port}): {'🟢 TERHUBUNG' if ftp_ok else '🔴 GAGAL'}"
+        messagebox.showinfo("Hasil Uji Koneksi", msg, parent=root)
+
+    def on_save():
+        new_cfg = {
+            "server_ip": fields["server_ip"].get().strip(),
+            "ws_port": int(fields["ws_port"].get().strip() or 3000),
+            "ftp_host": fields["ftp_host"].get().strip(),
+            "ftp_port": int(fields["ftp_port"].get().strip() or 21),
+            "ftp_user": fields["ftp_user"].get().strip(),
+            "ftp_pass": fields["ftp_pass"].get().strip(),
+            "ftp_dir": fields["ftp_dir"].get().strip(),
+            "agent_token": cfg.get("agent_token", "maskom-agent-2024")
+        }
+
+        success, res_path = save_config(new_cfg)
+        if success:
+            messagebox.showinfo("SUKSES", f"Konfigurasi berhasil disimpan ke:\n{res_path}", parent=root)
+            root.destroy()
+        else:
+            messagebox.showerror("ERROR", f"Gagal menyimpan konfigurasi: {res_path}", parent=root)
+
+    # Frame Buttons
+    btn_frame = tk.Frame(form_frame, bg=BG_COLOR)
+    btn_frame.pack(fill="x", pady=(15, 0))
+
+    btn_test = tk.Button(btn_frame, text="🧪 Uji Koneksi", command=test_connection, bg="#6c757d", fg="white", font=("Segoe UI", 9, "bold"), relief="flat", padx=10, pady=6)
+    btn_test.pack(side="left")
+
+    btn_save = tk.Button(btn_frame, text="💾 Simpan Konfigurasi", command=on_save, bg=PRIMARY_COLOR, fg="white", font=("Segoe UI", 9, "bold"), relief="flat", padx=15, pady=6)
+    btn_save.pack(side="right")
+
+    root.mainloop()
+
+# ==========================================================================
+# FITUR AUTO SETUP WOL & INSTALLER ALL-IN-ONE
+# ==========================================================================
+def setup_wol():
+    """Setup Wake-on-LAN (Magic Packet) pada Adapter LAN & Matikan Fast Startup Windows."""
+    print("\n[WOL SETUP] Mengonfigurasi adapter jaringan & Power Settings...")
+    if sys.platform != 'win32':
+        print("[WOL SETUP] Hanya mendukung sistem operasi Windows.")
+        return False
+
+    ps_script = """
+    $adapters = Get-NetAdapter | Where-Object { $_.Status -eq 'Up' -and $_.HardwareInterface -eq $true }
+    foreach ($adapter in $adapters) {
+        try {
+            Enable-NetAdapterPowerManagement -Name $adapter.Name -WakeOnMagicPacket -ErrorAction SilentlyContinue
+            Write-Host "Magic Packet diaktifkan pada: $($adapter.Name)"
+        } catch {}
+    }
+    Set-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power' -Name 'HiberbootEnabled' -Value 0 -Force -ErrorAction SilentlyContinue
+    powercfg /h off
+    """
+    try:
+        res = subprocess.run(["powershell", "-ExecutionPolicy", "Bypass", "-Command", ps_script], capture_output=True, text=True)
+        print("[WOL SETUP SUKSES] Fast Startup dimatikan & Magic Packet diaktifkan pada kartu jaringan.")
+        return True
+    except Exception as e:
+        print(f"[WOL SETUP ERROR] Gagal mengonfigurasi WOL: {e}")
+        return False
+
+def install_agent(server_ip=None, ws_port=None):
+    """Instal agen ke C:\\Program Files\\MaskomAgent, daftarkan Registry Auto-start, Firewall, & WOL."""
+    print("\n============================================================")
+    print("  INSTALASI ALL-IN-ONE MASKOM AGENT                         ")
+    print("============================================================")
+    
+    cfg = load_config()
+    if server_ip:
+        cfg["server_ip"] = server_ip
+        cfg["ftp_host"] = server_ip
+    if ws_port:
+        cfg["ws_port"] = int(ws_port)
+
+    install_dir = r"C:\Program Files\MaskomAgent"
+    try:
+        os.makedirs(install_dir, exist_ok=True)
+    except Exception as e:
+        print(f"[ERROR] Gagal membuat direktori {install_dir}. Pastikan dijalankan sebagai Administrator: {e}")
+        return False
+
+    # Stop proses main.exe yang sedang berjalan (selain PID saat ini)
+    subprocess.run('taskkill /f /im main.exe /fi "PID ne %d"' % os.getpid(), shell=True, capture_output=True)
+
+    is_frozen = getattr(sys, 'frozen', False)
+    exe_src = sys.executable if is_frozen else os.path.abspath(__file__)
+    target_exe = os.path.join(install_dir, "main.exe")
+
+    if is_frozen and exe_src.lower() != target_exe.lower():
+        import shutil
+        try:
+            shutil.copy2(exe_src, target_exe)
+            print(f"[1/5] Executable disalin ke: {target_exe}")
+            src_internal = os.path.join(os.path.dirname(exe_src), "_internal")
+            dst_internal = os.path.join(install_dir, "_internal")
+            if os.path.exists(src_internal):
+                shutil.copytree(src_internal, dst_internal, dirs_exist_ok=True)
+                print(f"      Folder '_internal' disalin ke: {dst_internal}")
+        except Exception as e:
+            print(f"[WARN] Gagal menyalin file (kemungkinan sedang berjalan): {e}")
+
+    # Simpan config
+    target_cfg = os.path.join(install_dir, "agent_config.json")
+    save_config(cfg)
+    try:
+        with open(target_cfg, "w", encoding="utf-8") as f:
+            json.dump(cfg, f, indent=4)
+        print(f"[2/5] Konfigurasi disimpan ke: {target_cfg}")
+    except Exception as e:
+        print(f"[WARN] Gagal menyimpan file config di install_dir: {e}")
+
+    # Registry Startup
+    startup_cmd = f'"{target_exe}" --daemon' if is_frozen else f'python "{os.path.abspath(__file__)}" --daemon'
+    try:
+        import winreg
+        key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", 0, winreg.KEY_SET_VALUE)
+        winreg.SetValueEx(key, "MaskomAgent", 0, winreg.REG_SZ, startup_cmd)
+        winreg.CloseKey(key)
+        print(f"[3/5] Registry Auto-start didaftarkan: MaskomAgent")
+    except Exception as e:
+        print(f"[WARN] Gagal mendaftarkan registry startup (butuh Admin privilege): {e}")
+
+    # Firewall Rule
+    try:
+        fw_cmd = f'netsh advfirewall firewall add rule name="MaskomAgent-WebSocket" dir=out action=allow protocol=TCP localport=any remoteport={cfg["ws_port"]}'
+        subprocess.run(fw_cmd, shell=True, capture_output=True)
+        print(f"[4/5] Windows Firewall Outbound Rule (Port {cfg['ws_port']}) ditambahkan.")
+    except Exception as e:
+        print(f"[WARN] Firewall rule setup: {e}")
+
+    # Setup WOL
+    print("[5/5] Mengonfigurasi Wake-on-LAN...")
+    setup_wol()
+
+    print("\n============================================================")
+    print("  INSTALASI SELESAI & AGENT AKTIF!                          ")
+    print("============================================================")
+    print(f"  Server WebSocket : ws://{cfg['server_ip']}:{cfg['ws_port']}")
+    print(f"  FTP Server       : {cfg['ftp_host']}:{cfg['ftp_port']} (Folder: {cfg['ftp_dir']})")
+    print("============================================================")
+
+    # Jalankan daemon sekarang di background
+    if is_frozen and os.path.exists(target_exe):
+        subprocess.Popen([target_exe, "--daemon"], creationflags=0x08000000) # DETACHED_PROCESS
+        print("  Agen telah diluncurkan di background (System Tray Icon).")
+
+    return True
+
 
 # DATABASE UNTUK COCHOKAN SOCKET SECARA OTOMATIS
 DATABASE_SOCKET = {
@@ -650,23 +1038,17 @@ def collect_specs():
     return full_specs, f"{ip_onboard}.json"
 
 
-def deploy_folder(url, zip_name, exec_rel_path, exec_args="", extract_root=None):
+def deploy_folder(url, zip_name, exec_rel_path="", exec_args="", extract_root=None, deploy_mode="run_exe"):
     """
-    Download file .zip dari URL server, ekstrak ke extract_root,
-    lalu jalankan file .exe sesuai exec_rel_path di dalam folder hasil ekstraksi.
-
-    Args:
-        url           : URL lengkap file .zip   (misal http://192.168.x.x:3000/temp-upload/app.zip)
-        zip_name      : Nama file zip           (misal app.zip)
-        exec_rel_path : Path relatif .exe dalam zip (misal MyApp/launcher.exe)
-        exec_args     : Argumen tambahan untuk .exe  (opsional)
-        extract_root  : Folder ekstraksi (default C:\\MaskomDeploy)
+    Download file .zip dari URL server, ekstrak ke extract_root.
+    Opsi 1 (deploy_mode == "file_only" atau exec_rel_path kosong): Hanya kirim & ekstrak file saja (File Sharing).
+    Opsi 2 (deploy_mode == "run_exe" dan exec_rel_path diisi): Ekstrak & jalankan program .exe.
     """
     import urllib.request
     import zipfile
     import tempfile
 
-    if extract_root is None:
+    if extract_root is None or not str(extract_root).strip():
         extract_root = os.path.join("C:\\", "MaskomDeploy")
 
     os.makedirs(extract_root, exist_ok=True)
@@ -674,9 +1056,9 @@ def deploy_folder(url, zip_name, exec_rel_path, exec_args="", extract_root=None)
     # 1. Download zip ke tempdir
     tmp_zip = os.path.join(tempfile.gettempdir(), zip_name)
     try:
-        print(f"[DEPLOY] Mengunduh {url} ...")
+        log_msg(f"[DEPLOY] Mengunduh {url} ...")
         urllib.request.urlretrieve(url, tmp_zip)
-        print(f"[DEPLOY] Download selesai -> {tmp_zip}")
+        log_msg(f"[DEPLOY] Download selesai -> {tmp_zip}")
     except Exception as e:
         raise RuntimeError(f"Gagal mengunduh file zip: {e}")
 
@@ -685,7 +1067,7 @@ def deploy_folder(url, zip_name, exec_rel_path, exec_args="", extract_root=None)
     try:
         with zipfile.ZipFile(tmp_zip, "r") as zf:
             zf.extractall(extract_dir)
-        print(f"[DEPLOY] Diekstrak ke {extract_dir}")
+        log_msg(f"[DEPLOY] Diekstrak ke {extract_dir}")
     except Exception as e:
         raise RuntimeError(f"Gagal mengekstrak zip: {e}")
     finally:
@@ -694,266 +1076,478 @@ def deploy_folder(url, zip_name, exec_rel_path, exec_args="", extract_root=None)
         except Exception:
             pass
 
-    # 3. Jalankan .exe target
-    exe_path = os.path.join(extract_dir, exec_rel_path.replace("/", os.sep))
-    if not os.path.isfile(exe_path):
-        raise RuntimeError(f"File .exe tidak ditemukan: {exe_path}")
+    # Jika Mode File Sharing / Only Send Files (tanpa eksekusi .exe)
+    if deploy_mode == "file_only" or not exec_rel_path or exec_rel_path.strip() in ["", "-"]:
+        log_msg(f"[DEPLOY SUKSES] Mode File Sharing: File berhasil disimpan & diekstrak di {extract_dir}")
+        return None
+
+    # 3. Mode Jalankan Program: Eksekusi program / script / file target apapun di path
+    target_rel = exec_rel_path.replace("/", os.sep).strip()
+    target_path = os.path.join(extract_dir, target_rel)
+
+    actual_path = None
+    if os.path.isfile(target_path):
+        actual_path = target_path
+    else:
+        # Jika path diisi tanpa ekstensi, coba cari ekstensi umum
+        for ext in [".exe", ".bat", ".cmd", ".ps1", ".msi", ".vbs", ".lnk"]:
+            if os.path.isfile(target_path + ext):
+                actual_path = target_path + ext
+                break
+        
+        # Jika belum ditemukan, cari file dengan nama tersebut di subfolder ekstraksi
+        if not actual_path:
+            for root_dir, _, files in os.walk(extract_dir):
+                for f in files:
+                    if f.lower() == target_rel.lower() or f.lower() == (target_rel + ".exe").lower():
+                        actual_path = os.path.join(root_dir, f)
+                        break
+                if actual_path:
+                    break
+
+    if not actual_path or not os.path.exists(actual_path):
+        raise RuntimeError(f"File/program tidak ditemukan di: {target_path}")
+
+    ext = os.path.splitext(actual_path)[1].lower()
+    args_list = exec_args.strip().split() if exec_args and exec_args.strip() else []
+
+    # Susun komando eksekusi sesuai ekstensi file agar Windows dapat mengeksekusinya
+    if ext in [".bat", ".cmd"]:
+        cmd = ["cmd.exe", "/c", actual_path] + args_list
+    elif ext == ".ps1":
+        cmd = ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", actual_path] + args_list
+    elif ext == ".msi":
+        cmd = ["msiexec.exe", "/i", actual_path] + args_list
+    elif ext == ".vbs":
+        cmd = ["wscript.exe", actual_path] + args_list
+    elif ext == ".py":
+        cmd = [sys.executable, actual_path] + args_list
+    else:
+        cmd = [actual_path] + args_list
 
     try:
-        cmd = [exe_path]
-        if exec_args:
-            cmd += exec_args.split()
-        proc = subprocess.Popen(cmd, cwd=os.path.dirname(exe_path))
-        print(f"[DEPLOY] Menjalankan {exe_path} (PID: {proc.pid})")
+        proc = subprocess.Popen(cmd, cwd=os.path.dirname(actual_path), shell=True)
+        log_msg(f"[DEPLOY SUKSES] Menjalankan program {actual_path} (PID: {proc.pid})")
         return proc.pid
     except Exception as e:
-        raise RuntimeError(f"Gagal menjalankan exe: {e}")
+        raise RuntimeError(f"Gagal menjalankan program '{actual_path}': {e}")
 
 
-def run_daemon(server_url):
-    """
-    Mode daemon: sambungkan WebSocket ke server MaskomApp dan tunggu instruksi.
-    Diperlukan: pip install websocket-client
-    """
+def install_agent(server_ip=None, ws_port=None):
+    """Instal agen ke C:\\Program Files\\MaskomAgent, daftarkan Registry Auto-start, Firewall, & WOL."""
+    log_msg("============================================================")
+    log_msg("  INSTALASI ALL-IN-ONE MASKOM AGENT                         ")
+    log_msg("============================================================")
+    
+    if not is_admin():
+        log_msg("[INFO] Meminta hak akses Administrator...")
+        elevate_admin()
+        return False
+
+    cfg = load_config()
+    if server_ip:
+        cfg["server_ip"] = server_ip
+        cfg["ftp_host"] = server_ip
+    if ws_port:
+        cfg["ws_port"] = int(ws_port)
+
+    install_dir = r"C:\Program Files\MaskomAgent"
     try:
-        import websocket
-    except ImportError:
-        print("[DAEMON] ERROR: library 'websocket-client' tidak terinstal.")
-        print("         Jalankan: pip install websocket-client")
-        sys.exit(1)
+        os.makedirs(install_dir, exist_ok=True)
+    except Exception as e:
+        log_msg(f"[ERROR] Gagal membuat direktori {install_dir}: {e}")
+        return False
+
+    # Stop proses main.exe lain yang sedang berjalan (selain PID saat ini)
+    try:
+        subprocess.run('taskkill /f /im main.exe /fi "PID ne %d"' % os.getpid(), shell=True, capture_output=True)
+    except Exception:
+        pass
+
+    is_frozen = getattr(sys, 'frozen', False)
+    exe_src = sys.executable if is_frozen else os.path.abspath(__file__)
+    target_exe = os.path.join(install_dir, "main.exe")
+
+    if is_frozen and exe_src.lower() != target_exe.lower():
+        import shutil
+        try:
+            shutil.copy2(exe_src, target_exe)
+            log_msg(f"[1/5] Executable disalin ke: {target_exe}")
+            src_internal = os.path.join(os.path.dirname(exe_src), "_internal")
+            dst_internal = os.path.join(install_dir, "_internal")
+            if os.path.exists(src_internal):
+                shutil.copytree(src_internal, dst_internal, dirs_exist_ok=True)
+                log_msg(f"      Folder '_internal' disalin ke: {dst_internal}")
+        except Exception as e:
+            log_msg(f"[WARN] Gagal menyalin file: {e}")
+
+    # Simpan config
+    target_cfg = os.path.join(install_dir, "agent_config.json")
+    save_config(cfg)
+    try:
+        with open(target_cfg, "w", encoding="utf-8") as f:
+            json.dump(cfg, f, indent=4)
+        log_msg(f"[2/5] Konfigurasi disimpan ke: {target_cfg}")
+    except Exception as e:
+        log_msg(f"[WARN] Gagal menyimpan file config di install_dir: {e}")
+
+    # Registry Startup
+    startup_cmd = f'"{target_exe}" --daemon' if is_frozen else f'python "{os.path.abspath(__file__)}" --daemon'
+    try:
+        import winreg
+        key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", 0, winreg.KEY_SET_VALUE)
+        winreg.SetValueEx(key, "MaskomAgent", 0, winreg.REG_SZ, startup_cmd)
+        winreg.CloseKey(key)
+        log_msg(f"[3/5] Registry Auto-start didaftarkan: MaskomAgent")
+    except Exception as e:
+        log_msg(f"[WARN] Gagal mendaftarkan registry startup: {e}")
+
+    # Firewall Rule
+    try:
+        fw_cmd = f'netsh advfirewall firewall add rule name="MaskomAgent-WebSocket" dir=out action=allow protocol=TCP localport=any remoteport={cfg["ws_port"]}'
+        subprocess.run(fw_cmd, shell=True, capture_output=True)
+        log_msg(f"[4/5] Windows Firewall Outbound Rule (Port {cfg['ws_port']}) ditambahkan.")
+    except Exception as e:
+        log_msg(f"[WARN] Firewall rule setup: {e}")
+
+    # Setup WOL
+    log_msg("[5/5] Mengonfigurasi Wake-on-LAN...")
+    setup_wol()
+
+    log_msg("============================================================")
+    log_msg("  INSTALASI SELESAI & AGENT AKTIF!                          ")
+    log_msg("============================================================")
+
+    return True
+
+
+def run_daemon(server_url=None):
+    """Alias daemon mode ke Jendela GUI Agent Client."""
+    show_agent_gui(server_url)
+
+def show_agent_gui(server_url=None):
+    """Jendela GUI Utama Agen Client (Status Realtime 🟢/🔴, Log Box, & Controller)."""
+    if not HAS_TKINTER:
+        log_msg("[WARN] Tkinter tidak tersedia. Menjalankan daemon console mode.")
+        run_daemon(server_url)
+        return
+
+    cfg = load_config()
+    apply_config(cfg)
+
+    if not server_url:
+        server_url = SERVER_URL
 
     current_hostname = platform.node()
-    current_ip = ""
+    current_ip = "Unknown"
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
         current_ip = s.getsockname()[0]
         s.close()
     except Exception:
-        current_ip = "Unknown"
+        pass
 
-    AGENT_TOKEN = os.environ.get("MASKOM_AGENT_TOKEN", "maskom-agent-2024")
+    root = tk.Tk()
+    root.title(f"MaskomAgent Client - {current_hostname}")
+    root.geometry("540x480")
+    root.resizable(False, False)
 
-    print(f"[DAEMON] Memulai agen WebSocket...")
-    print(f"[DAEMON] Hostname : {current_hostname}")
-    print(f"[DAEMON] IP       : {current_ip}")
-    print(f"[DAEMON] Server   : {server_url}")
+    BG_COLOR = "#f7f9fb"
+    PRIMARY_COLOR = "#494bd6"
+    root.configure(bg=BG_COLOR)
 
-    ws_url = server_url.rstrip("/") + f"/ws/agent/{current_hostname}"
+    # Header Card
+    header = tk.Frame(root, bg=PRIMARY_COLOR, height=65)
+    header.pack(fill="x")
+    header.pack_propagate(False)
 
-    def on_open(ws):
-        reg = json.dumps({
-            "type":     "register",
-            "hostname": current_hostname,
-            "ip":       current_ip,
-            "token":    AGENT_TOKEN
-        })
-        ws.send(reg)
-        print(f"[DAEMON] Terhubung & registrasi dikirim.")
+    lbl_title = tk.Label(header, text=f"💻 MaskomAgent Client — {current_hostname}", fg="white", bg=PRIMARY_COLOR, font=("Segoe UI", 12, "bold"))
+    lbl_title.pack(anchor="w", padx=20, pady=(12, 0))
 
-    def on_message(ws, message):
+    lbl_sub = tk.Label(header, text=f"IP Local: {current_ip} | Server Host: {cfg.get('server_ip')}:{cfg.get('ws_port')}", fg="#dcdbff", bg=PRIMARY_COLOR, font=("Segoe UI", 9))
+    lbl_sub.pack(anchor="w", padx=20, pady=(2, 0))
+
+    # Status Banner Card
+    status_card = tk.Frame(root, bg="#ffffff", bd=1, relief="solid")
+    status_card.pack(fill="x", padx=15, pady=12)
+
+    lbl_status_icon = tk.Label(status_card, text="🟡", bg="#ffffff", font=("Segoe UI", 18))
+    lbl_status_icon.pack(side="left", padx=15, pady=10)
+
+    status_text_frame = tk.Frame(status_card, bg="#ffffff")
+    status_text_frame.pack(side="left", fill="both", expand=True, pady=10)
+
+    lbl_status_title = tk.Label(status_text_frame, text="MENGHUBUNGKAN KE SERVER...", fg="#333333", bg="#ffffff", font=("Segoe UI", 10, "bold"))
+    lbl_status_title.pack(anchor="w")
+
+    lbl_status_desc = tk.Label(status_text_frame, text=f"Target: ws://{cfg.get('server_ip')}:{cfg.get('ws_port')}", fg="#666666", bg="#ffffff", font=("Segoe UI", 9))
+    lbl_status_desc.pack(anchor="w")
+
+    # Realtime Log Area
+    lbl_log = tk.Label(root, text="📋 Catatan Aktivitas Real-time (Log):", bg=BG_COLOR, font=("Segoe UI", 9, "bold"), fg="#333333")
+    lbl_log.pack(anchor="w", padx=15, pady=(5, 2))
+
+    log_frame = tk.Frame(root, bg=BG_COLOR)
+    log_frame.pack(fill="both", expand=True, padx=15)
+
+    txt_log = tk.Text(log_frame, font=("Consolas", 9), bg="#1e1e1e", fg="#d4d4d4", bd=1, relief="solid", height=10)
+    txt_log.pack(fill="both", expand=True)
+
+    def gui_log(msg):
+        timestamp = datetime.datetime.now().strftime("%H:%M:%S")
+        line = f"[{timestamp}] {msg}\n"
+        log_msg(msg)
         try:
-            data = json.loads(message)
+            txt_log.config(state="normal")
+            txt_log.insert("end", line)
+            txt_log.see("end")
+            txt_log.config(state="disabled")
         except Exception:
-            print(f"[DAEMON] Pesan tidak valid: {message}")
-            return
+            pass
 
-        action = data.get("action")
-        req_id = data.get("req_id", "")
-        print(f"[DAEMON] Perintah diterima: {action} (req_id={req_id})")
+    def update_status_ui(is_connected, message):
+        try:
+            if is_connected:
+                lbl_status_icon.config(text="🟢")
+                lbl_status_title.config(text="TERHUBUNG KE SERVER (ONLINE)", fg="#28a745")
+            else:
+                lbl_status_icon.config(text="🔴")
+                lbl_status_title.config(text="TERPUTUS / RECONNECTING...", fg="#dc3545")
+            lbl_status_desc.config(text=message)
+        except Exception:
+            pass
 
-        def send_status(status, payload=None):
-            resp = {
-                "type":     "agent_response",
-                "req_id":   req_id,
-                "hostname": current_hostname,
-                "status":   status
-            }
-            if payload:
-                resp.update(payload)
+    # Tombol Aksi
+    btn_frame = tk.Frame(root, bg=BG_COLOR)
+    btn_frame.pack(fill="x", padx=15, pady=12)
+
+    def on_scan_click():
+        def run_scan():
+            gui_log("Memulai scan spesifikasi manual...")
             try:
-                ws.send(json.dumps(resp))
-            except Exception as e:
-                print(f"[DAEMON] Gagal kirim respons: {e}")
-
-        # --- Aksi: scan_spec ---
-        if action == "scan_spec":
-            try:
-                send_status("scanning")
                 specs, fname = collect_specs()
-
-                # Simpan file lokal
-                if getattr(sys, 'frozen', False):
-                    base_dir = os.path.dirname(sys.executable)
-                else:
-                    base_dir = os.path.dirname(os.path.abspath(__file__))
-
+                base_dir = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.dirname(os.path.abspath(__file__))
                 local_path = os.path.join(base_dir, fname)
                 with open(local_path, "w", encoding="utf-8") as f:
                     json.dump(specs, f, indent=4, ensure_ascii=False)
-
-                # Upload ke FTP
                 upload_to_ftp(local_path)
-
-                send_status("success", {
-                    "message": f"Scan selesai. File {fname} berhasil diperbarui dan dikirim ke FTP.",
-                    "filename": fname
-                })
+                gui_log(f"SUKSES: Scan selesai. File {fname} terkirim ke FTP.")
+                messagebox.showinfo("Scan Selesai", f"Data spesifikasi {fname} berhasil di-scan & dikirim ke FTP!", parent=root)
             except Exception as e:
-                send_status("error", {"message": str(e)})
+                gui_log(f"ERROR: Gagal scan spesifikasi: {e}")
+                messagebox.showerror("Error Scan", f"Gagal scan: {e}", parent=root)
 
-        # --- Aksi: deploy_folder ---
-        elif action == "deploy_folder":
-            url           = data.get("url")
-            zip_name      = data.get("zip_name")
-            exec_rel_path = data.get("exec_path", "")
-            exec_args     = data.get("exec_args", "")
-            extract_root  = data.get("extract_root", None)
+        threading.Thread(target=run_scan, daemon=True).start()
 
-            if not url or not zip_name or not exec_rel_path:
-                send_status("error", {"message": "Parameter deploy tidak lengkap (url/zip_name/exec_path)."})
-                return
+    def on_open_settings():
+        show_config_gui()
+        c = load_config()
+        lbl_sub.config(text=f"IP Local: {current_ip} | Server Host: {c.get('server_ip')}:{c.get('ws_port')}")
+        lbl_status_desc.config(text=f"Target: ws://{c.get('server_ip')}:{c.get('ws_port')}")
+
+    def on_hide_to_tray():
+        root.withdraw()
+        gui_log("Jendela disembunyikan ke System Tray (Pojok Kanan Jam).")
+
+    btn_cfg = tk.Button(btn_frame, text="⚙️ Pengaturan Server", command=on_open_settings, bg="#6c757d", fg="white", font=("Segoe UI", 9, "bold"), relief="flat", padx=10, pady=6)
+    btn_cfg.pack(side="left")
+
+    btn_scan = tk.Button(btn_frame, text="🔄 Scan Spesifikasi", command=on_scan_click, bg=PRIMARY_COLOR, fg="white", font=("Segoe UI", 9, "bold"), relief="flat", padx=12, pady=6)
+    btn_scan.pack(side="left", padx=8)
+
+    btn_hide = tk.Button(btn_frame, text="📌 Sembunyikan", command=on_hide_to_tray, bg="#17a2b8", fg="white", font=("Segoe UI", 9, "bold"), relief="flat", padx=10, pady=6)
+    btn_hide.pack(side="right")
+
+    # Thread Background WebSocket
+    AGENT_TOKEN = cfg.get("agent_token", "maskom-agent-2024")
+
+    def ws_loop():
+        import time
+        import websocket
+
+        while True:
+            c = load_config()
+            target_ws_url = f"ws://{c.get('server_ip', '192.168.33.181')}:{c.get('ws_port', 3000)}/ws/agent/{current_hostname}"
 
             try:
-                send_status("downloading")
-                pid = deploy_folder(url, zip_name, exec_rel_path, exec_args, extract_root)
-                send_status("success", {
-                    "message": f"Program '{exec_rel_path}' berhasil dijalankan (PID: {pid}).",
-                    "pid": pid
-                })
+                gui_log(f"Menghubungkan ke {target_ws_url} ...")
+                update_status_ui(False, f"Menghubungkan ke {target_ws_url}...")
+
+                def on_open(ws):
+                    reg = json.dumps({
+                        "type": "register",
+                        "hostname": current_hostname,
+                        "ip": current_ip,
+                        "token": AGENT_TOKEN
+                    })
+                    ws.send(reg)
+                    gui_log(f"Terhubung & terdaftar di server: {target_ws_url}")
+                    update_status_ui(True, f"Terhubung aktif ke ws://{c.get('server_ip')}:{c.get('ws_port')}")
+
+                def on_message(ws, message):
+                    try:
+                        data = json.loads(message)
+                    except Exception:
+                        return
+
+                    action = data.get("action")
+                    req_id = data.get("req_id", "")
+                    gui_log(f"Perintah diterima dari server: {action} (req_id={req_id})")
+
+                    def send_status(status, payload=None):
+                        resp = {
+                            "type": "agent_response",
+                            "req_id": req_id,
+                            "hostname": current_hostname,
+                            "status": status
+                        }
+                        if payload: resp.update(payload)
+                        try: ws.send(json.dumps(resp))
+                        except Exception: pass
+
+                    if action == "scan_spec":
+                        try:
+                            send_status("scanning")
+                            specs, fname = collect_specs()
+                            base_dir = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.dirname(os.path.abspath(__file__))
+                            local_path = os.path.join(base_dir, fname)
+                            with open(local_path, "w", encoding="utf-8") as f:
+                                json.dump(specs, f, indent=4, ensure_ascii=False)
+                            upload_to_ftp(local_path)
+                            gui_log(f"Perintah Scan selesai. File {fname} dikirim ke FTP.")
+                            send_status("success", {"message": f"Scan selesai. File {fname} terkirim.", "filename": fname})
+                        except Exception as e:
+                            gui_log(f"Perintah Scan Gagal: {e}")
+                            send_status("error", {"message": str(e)})
+
+                    elif action == "deploy_folder":
+                        url           = data.get("url")
+                        zip_name      = data.get("zip_name")
+                        exec_rel_path = data.get("exec_path", "")
+                        exec_args     = data.get("exec_args", "")
+                        extract_root  = data.get("extract_root", None)
+                        deploy_mode   = data.get("deploy_mode", "file_only" if not exec_rel_path else "run_exe")
+
+                        if not url or not zip_name:
+                            send_status("error", {"message": "Parameter deploy tidak lengkap (url/zip_name)."})
+                            return
+
+                        try:
+                            send_status("downloading")
+                            gui_log(f"Mulai download paket deploy: {zip_name} (Mode: {deploy_mode}) ...")
+                            pid = deploy_folder(url, zip_name, exec_rel_path, exec_args, extract_root, deploy_mode)
+                            if pid:
+                                gui_log(f"Deploy & Jalankan Program Sukses. PID: {pid}")
+                                send_status("success", {"message": f"Program '{exec_rel_path}' berhasil dijalankan (PID: {pid}).", "pid": pid})
+                            else:
+                                gui_log(f"Deploy File Sharing Sukses. File disimpan & diekstrak di PC klien.")
+                                send_status("success", {"message": f"File '{zip_name}' berhasil dikirim dan diekstrak ke PC klien (Mode File Sharing)."})
+                        except Exception as e:
+                            gui_log(f"Deploy gagal: {e}")
+                            send_status("error", {"message": str(e)})
+
+                def on_error(ws, error):
+                    gui_log(f"WebSocket error: {error}")
+                    update_status_ui(False, f"WebSocket error: {error}")
+
+                def on_close(ws, code, msg):
+                    gui_log(f"Koneksi terputus. Reconnecting dalam 10 detik...")
+                    update_status_ui(False, "Koneksi terputus. Reconnecting...")
+
+                ws_app = websocket.WebSocketApp(
+                    target_ws_url,
+                    on_open=on_open,
+                    on_message=on_message,
+                    on_error=on_error,
+                    on_close=on_close
+                )
+                ws_app.run_forever(ping_interval=30, ping_timeout=10)
             except Exception as e:
-                send_status("error", {"message": str(e)})
+                gui_log(f"Error loop koneksi: {e}")
+                update_status_ui(False, f"Gagal terhubung: {e}")
 
-        else:
-            send_status("error", {"message": f"Aksi tidak dikenal: {action}"})
+            time.sleep(10)
 
-    def on_error(ws, error):
-        print(f"[DAEMON] WebSocket error: {error}")
+    threading.Thread(target=ws_loop, daemon=True).start()
 
-    def on_close(ws, code, msg):
-        print(f"[DAEMON] Koneksi terputus (code={code}). Mencoba reconnect dalam 10 detik...")
+    # System Tray Icon Thread
+    if HAS_PYSTRAY:
+        def setup_tray():
+            try:
+                img = Image.new('RGBA', (64, 64), (0, 0, 0, 0))
+                draw = ImageDraw.Draw(img)
+                draw.ellipse((4, 4, 60, 60), fill=(73, 75, 214, 255))
+                draw.rectangle((18, 18, 46, 46), fill=(255, 255, 255, 255))
 
-    import time
-    while True:
-        try:
-            ws = websocket.WebSocketApp(
-                ws_url,
-                on_open=on_open,
-                on_message=on_message,
-                on_error=on_error,
-                on_close=on_close
-            )
-            ws.run_forever(ping_interval=30, ping_timeout=10)
-        except Exception as e:
-            print(f"[DAEMON] Koneksi gagal: {e}")
+                def on_restore_window(icon, item):
+                    root.after(0, root.deiconify)
 
-        time.sleep(10)
-        print(f"[DAEMON] Reconnecting ke {ws_url} ...")
+                def on_open_settings_tray(icon, item):
+                    root.after(0, show_config_gui)
+
+                def on_exit_tray(icon, item):
+                    icon.stop()
+                    root.after(0, root.destroy)
+                    os._exit(0)
+
+                menu = pystray.Menu(
+                    pystray.MenuItem("💻 Buka Tampilan Agent", on_restore_window, default=True),
+                    pystray.MenuItem("⚙️ Pengaturan Server & FTP", on_open_settings_tray),
+                    pystray.Menu.SEPARATOR,
+                    pystray.MenuItem("❌ Keluar / Stop Agen", on_exit_tray)
+                )
+
+                tray = pystray.Icon("MaskomAgent", img, f"MaskomAgent - {current_hostname}", menu)
+                tray.run()
+            except Exception as e:
+                gui_log(f"Tray Icon warn: {e}")
+
+        threading.Thread(target=setup_tray, daemon=True).start()
+
+    def on_window_close():
+        root.withdraw()
+        gui_log("Jendela disembunyikan ke System Tray (Pojok Kanan Jam).")
+
+    root.protocol("WM_DELETE_WINDOW", on_window_close)
+    root.mainloop()
 
 
 def main():
     multiprocessing.freeze_support()
 
-    # --- Cek argumen CLI ---
-    if "--daemon" in sys.argv:
-        # Ambil --server ws://... dari argumen
-        server_url = "ws://192.168.33.181:3000"
+    if "--config" in sys.argv:
+        show_config_gui()
+        return
+
+    if "--setup-wol" in sys.argv:
+        if not is_admin(): elevate_admin()
+        setup_wol()
+        return
+
+    if "--install" in sys.argv:
+        if not is_admin(): elevate_admin()
+        server_ip, ws_port = None, None
         for i, arg in enumerate(sys.argv):
-            if arg == "--server" and i + 1 < len(sys.argv):
-                server_url = sys.argv[i + 1]
-                break
-        run_daemon(server_url)
+            if arg == "--server" and i + 1 < len(sys.argv): server_ip = sys.argv[i + 1]
+            if arg == "--port" and i + 1 < len(sys.argv): ws_port = sys.argv[i + 1]
+        install_agent(server_ip, ws_port)
+        show_agent_gui()
         return
 
-    print("==========================================================")
-    print(" SPECHECK - Spesifikasi Komputer & Wake on LAN Manager ")
-    print("==========================================================")
-    print(" 1. Cek & Kirim Spesifikasi Komputer Ini   (Mode Client)")
-    print(" 2. Kelola Wake on LAN - Nyalakan Komputer Lain (Mode Admin)")
-    print("==========================================================")
-    mode = input("Masukkan pilihan (1/2) [default 1]: ").strip()
-
-    if mode == "2":
-        jalankan_mode_wol()
+    if "--daemon" in sys.argv:
+        show_agent_gui()
         return
 
-    print("\n==========================================================")
-    print(" Mengekstrak Spesifikasi Komputer & Jaringan... ")
-    print(" Mohon tunggu beberapa saat, jangan tutup jendela ini... ")
-    print("==========================================================")
-    
-    if getattr(sys, 'frozen', False):
-        base_dir = os.path.dirname(sys.executable)
-    else:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-    
-    # 1. PENCARIAN DATA SEPERTI WHOAMI (Username dan Hostname)
-    current_username = getpass.getuser()
-    current_hostname = platform.node()
-    whoami_style = f"{current_hostname}\\{current_username}"
-    
-    cpu_info = get_cpu_z_style()
-    lan_cards = get_lan_card_detail()
-    
-    # 2. STRATEGI GENERATE NAMA FILE BERDASARKAN IP INTEL CONNECTIONS ONBOARD
-    ip_onboard = ""
-    for card in lan_cards:
-        desc = str(card.get("Description (Nama Perangkat)", "")).lower()
-        ip_addr = card.get("IPv4 Address", "Disconnected / No IP")
-        
-        # Cari adapter yang merupakan Intel Ethernet dan sedang mendapatkan IP aktif
-        if "intel" in desc and "ethernet" in desc and ip_addr != "Disconnected / No IP":
-            ip_onboard = ip_addr
-            break
-            
-    # Fallback 1: Jika Intel Ethernet terpasang tapi kabelnya dicabut (tidak dapat IP),
-    # cari IP aktif pertama dari adapter LAN Kabel/WiFi apa saja yang tersedia.
-    if not ip_onboard:
-        for card in lan_cards:
-            ip_addr = card.get("IPv4 Address", "Disconnected / No IP")
-            if ip_addr != "Disconnected / No IP":
-                ip_onboard = ip_addr
-                break
-                
-    # Fallback 2: Jika komputer benar-benar offline / dicabut total dari jaringan lokal
-    if not ip_onboard or ip_onboard == "Disconnected / No IP":
-        ip_onboard = "OFFLINE-NO-IP"
+    # Jika dijalankan langsung (tanpa argumen CLI):
+    # Tampilkan Jendela GUI Utama Agen Client (Status Realtime, Log, Controller)
+    if is_admin():
+        try:
+            install_agent()
+        except Exception as e:
+            log_msg(f"Auto install warn: {e}")
 
-    # Pertahankan format IP dengan titik sebagai nama file (tidak diganti strip), misal: 192.168.32.224.json
-    format_nama_ip = ip_onboard
-    nama_file_json = f"{format_nama_ip}.json"
-    
-    # Susun semua spesifikasi ke dalam satu dictionary JSON
-    full_specs = {
-        "User Session (Whoami)": {
-            "Username": current_username,
-            "Hostname": current_hostname,
-            "Full Identity": whoami_style
-        },
-        "Sistem Operasi": platform.system() + " " + platform.release() + " (" + platform.architecture()[0] + ")",
-        "CPU": cpu_info,
-        "Mainboard": get_mainboard_z_style(),
-        "Memory & SPD": get_memory_z_style(),
-        "Graphics": get_gpu_detail(),
-        "Penyimpanan": get_storage_detail(),
-        "LAN/Network Card": lan_cards
-    }
-    
-    # 3. SIMPAN KE FILE JSON LOKAL
-    nama_file_lengkap = os.path.join(base_dir, nama_file_json)
-    with open(nama_file_lengkap, "w", encoding="utf-8") as f:
-        json.dump(full_specs, f, indent=4, ensure_ascii=False)
-        
-    print("\n[SUKSES] Semua spesifikasi mendalam telah berhasil diekstrak!")
-    print(f"File lokal : {nama_file_json}")
-    print(f"Lokasi     : {nama_file_lengkap}")
-    print("==========================================================")
-    
-    # 4. KIRIM OTOMATIS KE SERVER FTP TARGET
-    upload_to_ftp(nama_file_lengkap)
-    print("==========================================================")
-    
-    input("\nTekan ENTER untuk keluar...")
+    show_agent_gui()
 
 if __name__ == '__main__':
     main()

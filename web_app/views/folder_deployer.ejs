@@ -255,7 +255,7 @@
 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
     <div>
         <h1 style="font-size:22px; font-weight:700; color:#191c1e; margin:0;">Folder Deployer</h1>
-        <p style="font-size:13px; color:#464554; margin:4px 0 0;">Kirim folder program (.zip) dan jalankan file .exe ke PC klien secara massal via WebSocket.</p>
+        <p style="font-size:13px; color:#464554; margin:4px 0 0;">Kirim folder program (.zip) dan jalankan file/program ke PC klien secara massal via WebSocket.</p>
     </div>
     <div style="display:flex; gap:8px; align-items:center;">
         <div id="agentCountBadge" style="display:flex; align-items:center; gap:6px; background:#dcfce7; border:1px solid #bbf7d0; border-radius:999px; padding:6px 14px; font-size:12px; font-weight:600; color:#16a34a;">
@@ -315,13 +315,13 @@
             </div>
         </div>
 
-        <!-- Konfigurasi Eksekusi -->
+        <!-- Konfigurasi Eksekusi & Mode Deployment -->
         <div class="d-card">
             <div class="d-card-header">
-                <div class="icon"><span class="material-symbols-outlined" style="font-size:18px;">settings</span></div>
+                <div class="icon"><span class="material-symbols-outlined" style="font-size:18px;">tune</span></div>
                 <div>
-                    <h2>2. Konfigurasi Eksekusi</h2>
-                    <p>Tentukan file .exe yang akan dijalankan setelah diekstrak</p>
+                    <h2>2. Opsi Mode Deployment</h2>
+                    <p>Pilih apakah hanya mengirim file saja atau sekaligus menjalankan program .exe</p>
                 </div>
             </div>
             <div class="d-card-body">
@@ -330,20 +330,44 @@
                     <input type="text" id="selectedZipName" placeholder="Pilih file dari daftar di atas..." readonly
                            style="background:#f0f0ff; cursor:pointer;" onclick="document.getElementById('serverFileList').scrollIntoView({behavior:'smooth'})">
                 </div>
+
                 <div class="form-group">
-                    <label>Path File .exe (di dalam ZIP)</label>
-                    <input type="text" id="execPath" placeholder="Contoh: MyApp/launcher.exe">
-                    <p class="hint">Path relatif dari dalam arsip .zip. Contoh: jika ZIP berisi folder <code>MyApp/</code> dan di dalamnya ada <code>start.exe</code>, isi dengan <code>MyApp/start.exe</code></p>
+                    <label>Mode Sharing / Eksekusi</label>
+                    <div style="display:flex; flex-direction:column; gap:8px; margin-top:6px;">
+                        <label style="display:flex; align-items:center; gap:10px; font-weight:normal; font-size:13px; cursor:pointer; background:#eef2ff; padding:10px 14px; border:1px solid #494bd6; border-radius:8px;" id="lblModeFileOnly">
+                            <input type="radio" name="deployMode" value="file_only" checked onchange="onDeployModeChange()">
+                            <div>
+                                <strong style="color:#0f172a;">📦 Mode 1: Kirim & Ekstrak File Saja (File Sharing)</strong>
+                                <div style="font-size:11px; color:#64748b;">Hanya mengunduh dan menyimpan file di PC klien tanpa menjalankan program apapun.</div>
+                            </div>
+                        </label>
+                        <label style="display:flex; align-items:center; gap:10px; font-weight:normal; font-size:13px; cursor:pointer; background:#f8fafc; padding:10px 14px; border:1px solid #cbd5e1; border-radius:8px;" id="lblModeRunExe">
+                            <input type="radio" name="deployMode" value="run_exe" onchange="onDeployModeChange()">
+                            <div>
+                                <strong style="color:#0f172a;">🚀 Mode 2: Kirim & Jalankan Program / Script</strong>
+                                <div style="font-size:11px; color:#64748b;">Mengunduh, mengekstrak, dan otomatis mengeksekusi program atau script target.</div>
+                            </div>
+                        </label>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Argumen Tambahan (opsional)</label>
-                    <input type="text" id="execArgs" placeholder="Contoh: --silent --no-gui">
-                    <p class="hint">Argumen command line yang diteruskan saat menjalankan .exe</p>
+
+                <div id="execGroup" style="display:none; transition:all 0.3s ease;">
+                    <div class="form-group">
+                        <label>Path File / Program (di dalam ZIP)</label>
+                        <input type="text" id="execPath" placeholder="Contoh: MyApp/launcher.exe, setup.bat, install.ps1, atau app" oninput="checkDeployReady()">
+                        <p class="hint">Path relatif dari dalam arsip .zip. Bisa berupa file <code>.exe</code>, <code>.bat</code>, <code>.ps1</code>, <code>.cmd</code>, <code>.msi</code>, atau nama program tanpa ekstensi.</p>
+                    </div>
+                    <div class="form-group">
+                        <label>Argumen Tambahan (opsional)</label>
+                        <input type="text" id="execArgs" placeholder="Contoh: --silent --no-gui">
+                        <p class="hint">Argumen command line yang diteruskan saat menjalankan program</p>
+                    </div>
                 </div>
+
                 <div class="form-group">
-                    <label>Folder Ekstraksi di Klien (opsional)</label>
+                    <label>Folder Tujuan Ekstraksi di Klien (opsional)</label>
                     <input type="text" id="extractRoot" placeholder="Default: C:\MaskomDeploy">
-                    <p class="hint">Folder tujuan ekstraksi di komputer klien. Biarkan kosong untuk menggunakan default.</p>
+                    <p class="hint">Folder tempat file disimpan di PC klien. Biarkan kosong untuk folder default (<code>C:\MaskomDeploy</code>).</p>
                 </div>
             </div>
         </div>
@@ -656,12 +680,43 @@ function updateSelectedCount() {
     document.getElementById('selectedPcCount').textContent = `${selectedPCs.size} PC dipilih`;
 }
 
-// ============================================================
-// DEPLOY READINESS CHECK
-// ============================================================
+// =============================================
+// DEPLOY MODE & READINESS CHECK
+// =============================================
+function getDeployMode() {
+    const radios = document.getElementsByName('deployMode');
+    for (const r of radios) {
+        if (r.checked) return r.value;
+    }
+    return 'file_only';
+}
+
+function onDeployModeChange() {
+    const mode = getDeployMode();
+    const execGroup = document.getElementById('execGroup');
+    const lblFile = document.getElementById('lblModeFileOnly');
+    const lblExe = document.getElementById('lblModeRunExe');
+
+    if (mode === 'run_exe') {
+        execGroup.style.display = 'block';
+        lblExe.style.borderColor = '#494bd6';
+        lblExe.style.background = '#eef2ff';
+        lblFile.style.borderColor = '#cbd5e1';
+        lblFile.style.background = '#f8fafc';
+    } else {
+        execGroup.style.display = 'none';
+        lblFile.style.borderColor = '#494bd6';
+        lblFile.style.background = '#eef2ff';
+        lblExe.style.borderColor = '#cbd5e1';
+        lblExe.style.background = '#f8fafc';
+    }
+    checkDeployReady();
+}
+
 function checkDeployReady() {
+    const mode   = getDeployMode();
     const zipOk  = !!selectedZip;
-    const execOk = !!document.getElementById('execPath').value.trim();
+    const execOk = mode === 'file_only' || !!document.getElementById('execPath').value.trim();
     const pcOk   = selectedPCs.size > 0;
     const btn    = document.getElementById('btnDeploy');
     const info   = document.getElementById('deployReadyInfo');
@@ -669,21 +724,25 @@ function checkDeployReady() {
     btn.disabled = !(zipOk && execOk && pcOk);
 
     if (!zipOk)  info.textContent = '⚠ Pilih file .zip dari daftar.';
-    else if (!execOk) info.textContent = '⚠ Isi path file .exe di dalam ZIP.';
+    else if (!execOk) info.textContent = '⚠ Isi path file/program di dalam ZIP untuk Mode Jalankan Program.';
     else if (!pcOk)   info.textContent = '⚠ Pilih setidaknya satu PC target.';
-    else info.textContent = `✅ Siap deploy "${selectedZip}" ke ${selectedPCs.size} PC.`;
+    else {
+        const modeText = mode === 'file_only' ? 'File Sharing (Hanya Kirim File)' : 'Jalankan Program';
+        info.textContent = `✅ Siap deploy "${selectedZip}" [${modeText}] ke ${selectedPCs.size} PC.`;
+    }
 }
 
 // ============================================================
 // START DEPLOY
 // ============================================================
 async function startDeploy() {
-    const zipName    = selectedZip;
-    const execPath   = document.getElementById('execPath').value.trim();
-    const execArgs   = document.getElementById('execArgs').value.trim();
+    const deployMode  = getDeployMode();
+    const zipName     = selectedZip;
+    const execPath    = document.getElementById('execPath').value.trim();
+    const execArgs    = document.getElementById('execArgs').value.trim();
     const extractRoot = document.getElementById('extractRoot').value.trim() || null;
 
-    if (!zipName || !execPath || selectedPCs.size === 0) return;
+    if (!zipName || (deployMode === 'run_exe' && !execPath) || selectedPCs.size === 0) return;
 
     const btn = document.getElementById('btnDeploy');
     btn.disabled    = true;
@@ -691,8 +750,9 @@ async function startDeploy() {
 
     const hostnames = Array.from(selectedPCs);
     log(`\n<span class="log-info">━━━ Deploy dimulai ━━━</span>`);
+    log(`MODE  : <span class="log-info">${deployMode === 'file_only' ? '📦 Kirim File Saja (File Sharing)' : '🚀 Jalankan Program'}</span>`);
     log(`ZIP   : <span class="log-info">${zipName}</span>`);
-    log(`EXE   : <span class="log-info">${execPath}</span>`);
+    if (deployMode === 'run_exe') log(`TARGET: <span class="log-info">${execPath}</span>`);
     log(`Target: <span class="log-info">${hostnames.join(', ')}</span>`);
 
     // Inisialisasi tabel progres
@@ -706,7 +766,14 @@ async function startDeploy() {
         const res  = await fetch('/api/agent/deploy', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ hostnames, zip_name: zipName, exec_path: execPath, exec_args: execArgs, extract_root: extractRoot })
+            body: JSON.stringify({
+                hostnames,
+                zip_name: zipName,
+                deploy_mode: deployMode,
+                exec_path: execPath,
+                exec_args: execArgs,
+                extract_root: extractRoot
+            })
         });
         const data = await res.json();
 
@@ -714,7 +781,7 @@ async function startDeploy() {
 
         if (data.sent && data.sent.length > 0) {
             data.sent.forEach(h => {
-                deployProgress[h] = { ...deployProgress[h], status: 'downloading', message: 'Mengunduh di klien...' };
+                deployProgress[h] = { ...deployProgress[h], status: 'downloading', message: 'Mengunduh & mengekstrak di klien...' };
             });
         }
         if (data.offline && data.offline.length > 0) {

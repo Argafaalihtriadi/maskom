@@ -30,12 +30,13 @@ param (
 # =====================================================
 # KONFIGURASI
 # =====================================================
-$INSTALL_DIR    = "C:\Program Files\MaskomAgent"
-$EXE_NAME       = "main.exe"
-$STARTUP_NAME   = "MaskomAgent"
-$SERVER_URL     = "ws://${ServerIP}:${ServerPort}"
-$SOURCE_EXE     = Join-Path $PSScriptRoot $EXE_NAME
-$ENV_FILE       = Join-Path $INSTALL_DIR ".env"
+$INSTALL_DIR      = "C:\Program Files\MaskomAgent"
+$EXE_NAME         = "main.exe"
+$STARTUP_NAME     = "MaskomAgent"
+$SERVER_URL       = "ws://${ServerIP}:${ServerPort}"
+$SOURCE_EXE       = Join-Path $PSScriptRoot $EXE_NAME
+$SOURCE_INTERNAL  = Join-Path $PSScriptRoot "_internal"
+$ENV_FILE         = Join-Path $INSTALL_DIR ".env"
 
 # =====================================================
 # CEK PRASYARAT
@@ -57,6 +58,15 @@ if (-not (Test-Path $SOURCE_EXE)) {
     exit 1
 }
 
+# Cek peringatan folder _internal jika main.exe berukuran kecil (mode onedir PyInstaller)
+$exeSize = (Get-Item $SOURCE_EXE).Length
+if ($exeSize -lt 15MB -and -not (Test-Path $SOURCE_INTERNAL)) {
+    Write-Host "[WARN] Folder '_internal' tidak ditemukan!" -ForegroundColor Yellow
+    Write-Host "       Jika main.exe di-build menggunakan PyInstaller mode '--onedir'," -ForegroundColor Yellow
+    Write-Host "       folder '_internal' wajib disertakan agar agen dapat berjalan." -ForegroundColor Yellow
+    Write-Host ""
+}
+
 Write-Host "[1/5] Memeriksa direktori instalasi..." -ForegroundColor Yellow
 
 # =====================================================
@@ -70,7 +80,7 @@ if (-not (Test-Path $INSTALL_DIR)) {
 }
 
 # =====================================================
-# 2. SALIN FILE EXE KE INSTALL DIR
+# 2. SALIN FILE EXE & DEPENDENCIES KE INSTALL DIR
 # =====================================================
 Write-Host "[2/5] Menyalin agen ke direktori instalasi..." -ForegroundColor Yellow
 
@@ -84,6 +94,12 @@ if ($existingProc) {
 
 Copy-Item -Path $SOURCE_EXE -Destination "$INSTALL_DIR\$EXE_NAME" -Force
 Write-Host "      Agen disalin ke: $INSTALL_DIR\$EXE_NAME" -ForegroundColor Green
+
+if (Test-Path $SOURCE_INTERNAL) {
+    Write-Host "      Folder '_internal' ditemukan, menyalin dependency..." -ForegroundColor Yellow
+    Copy-Item -Path $SOURCE_INTERNAL -Destination "$INSTALL_DIR\_internal" -Recurse -Force
+    Write-Host "      Folder '_internal' disalin ke: $INSTALL_DIR\_internal" -ForegroundColor Green
+}
 
 # =====================================================
 # 3. TULIS FILE KONFIGURASI .env

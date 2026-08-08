@@ -1058,16 +1058,21 @@ app.post('/api/agent/scan/:hostname', requireAuth, (req, res) => {
 });
 
 // =============================================
-// API: Deploy Folder Program ke PC Klien
+// API: Deploy Folder Program / File Sharing ke PC Klien
 // =============================================
 app.post('/api/agent/deploy', requireAuth, (req, res) => {
-    const { hostnames, zip_name, exec_path, exec_args, extract_root } = req.body;
+    const { hostnames, zip_name, exec_path, exec_args, extract_root, deploy_mode } = req.body;
 
     if (!hostnames || !Array.isArray(hostnames) || hostnames.length === 0) {
         return res.status(400).json({ success: false, message: 'Pilih setidaknya satu PC target.' });
     }
-    if (!zip_name || !exec_path) {
-        return res.status(400).json({ success: false, message: 'zip_name dan exec_path wajib diisi.' });
+    if (!zip_name) {
+        return res.status(400).json({ success: false, message: 'File ZIP wajib dipilih.' });
+    }
+
+    const mode = deploy_mode || (exec_path ? 'run_exe' : 'file_only');
+    if (mode === 'run_exe' && (!exec_path || !exec_path.trim())) {
+        return res.status(400).json({ success: false, message: 'Path file/program wajib diisi untuk mode Jalankan Program.' });
     }
 
     const SERVER_IP  = getServerIp();
@@ -1093,9 +1098,10 @@ app.post('/api/agent/deploy', requireAuth, (req, res) => {
                 req_id,
                 url:          fileUrl,
                 zip_name,
-                exec_path,
-                exec_args:    exec_args || '',
-                extract_root: extract_root || null
+                deploy_mode:  mode,
+                exec_path:    exec_path ? exec_path.trim() : '',
+                exec_args:    exec_args ? exec_args.trim() : '',
+                extract_root: extract_root ? extract_root.trim() : null
             }));
             results.sent.push(hostname);
         } catch (err) {
@@ -1104,7 +1110,8 @@ app.post('/api/agent/deploy', requireAuth, (req, res) => {
         }
     });
 
-    const msg = `Perintah deploy dikirim ke ${results.sent.length} PC` +
+    const modeLabel = mode === 'file_only' ? 'File Sharing (Hanya Kirim File)' : 'Jalankan Program (.exe)';
+    const msg = `Perintah deploy [${modeLabel}] dikirim ke ${results.sent.length} PC` +
         (results.offline.length ? `, ${results.offline.length} PC offline/tidak terhubung.` : '.');
 
     res.json({
