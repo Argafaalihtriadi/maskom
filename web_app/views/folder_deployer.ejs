@@ -6,12 +6,16 @@
    ============================================= */
 .deployer-grid {
     display: grid;
-    grid-template-columns: 380px 1fr;
+    grid-template-columns: 380px minmax(0, 1fr);
     gap: 20px;
     align-items: start;
+    max-width: 100%;
+}
+.deployer-grid > * {
+    min-width: 0;
 }
 @media (max-width: 1100px) {
-    .deployer-grid { grid-template-columns: 1fr; }
+    .deployer-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* Cards */
@@ -20,6 +24,8 @@
     border: 1px solid #c7c4d7;
     border-radius: 12px;
     overflow: hidden;
+    min-width: 0;
+    max-width: 100%;
 }
 .d-card-header {
     display: flex;
@@ -120,6 +126,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 8px;
+    min-width: 0;
 }
 .pc-card {
     border: 1px solid #c7c4d7;
@@ -130,13 +137,28 @@
     background: #f7f9fb;
     position: relative;
     user-select: none;
+    min-width: 0;
+    overflow: hidden;
 }
 .pc-card:hover { border-color: #494bd6; background: #f0f0ff; }
 .pc-card.selected { border-color: #494bd6; background: #f0f0ff; box-shadow: 0 0 0 2px rgba(73,75,214,0.15); }
 .pc-card .pc-status { width: 8px; height: 8px; border-radius: 50%; background: #22C55E; display: inline-block; margin-right: 5px; }
 .pc-card .pc-status.offline { background: #EF4444; }
-.pc-card .pc-hostname { font-size: 12px; font-weight: 600; color: #191c1e; margin-top: 4px; }
-.pc-card .pc-ip { font-size: 11px; color: #767586; }
+.pc-card .pc-hostname { font-size: 12px; font-weight: 600; color: #191c1e; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pc-card .pc-ip { font-size: 11px; color: #767586; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pc-card .pc-dept {
+    display: inline-block;
+    max-width: 100%;
+    font-size: 10px;
+    color: #494bd6;
+    background: #f0f0ff;
+    border-radius: 999px;
+    padding: 1px 8px;
+    margin-top: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 .pc-card .pc-check {
     position: absolute; top: 6px; right: 6px;
     width: 16px; height: 16px;
@@ -337,15 +359,15 @@
                         <label style="display:flex; align-items:center; gap:10px; font-weight:normal; font-size:13px; cursor:pointer; background:#eef2ff; padding:10px 14px; border:1px solid #494bd6; border-radius:8px;" id="lblModeFileOnly">
                             <input type="radio" name="deployMode" value="file_only" checked onchange="onDeployModeChange()">
                             <div>
-                                <strong style="color:#0f172a;">📦 Mode 1: Kirim & Ekstrak File Saja (File Sharing)</strong>
-                                <div style="font-size:11px; color:#64748b;">Hanya mengunduh dan menyimpan file di PC klien tanpa menjalankan program apapun.</div>
+                                <strong style="color:#0f172a;">📦 Mode 1: File Sharing</strong>
+                                <div style="font-size:11px; color:#64748b;">Mengunduh dan Menyimpan File</div>
                             </div>
                         </label>
                         <label style="display:flex; align-items:center; gap:10px; font-weight:normal; font-size:13px; cursor:pointer; background:#f8fafc; padding:10px 14px; border:1px solid #cbd5e1; border-radius:8px;" id="lblModeRunExe">
                             <input type="radio" name="deployMode" value="run_exe" onchange="onDeployModeChange()">
                             <div>
-                                <strong style="color:#0f172a;">🚀 Mode 2: Kirim & Jalankan Program / Script</strong>
-                                <div style="font-size:11px; color:#64748b;">Mengunduh, mengekstrak, dan otomatis mengeksekusi program atau script target.</div>
+                                <strong style="color:#0f172a;">🚀 Mode 2: Sharing & Run Program</strong>
+                                <div style="font-size:11px; color:#64748b;">Mengunduh dan Menjalankan program</div>
                             </div>
                         </label>
                     </div>
@@ -397,6 +419,18 @@
                     <span id="selectedPcCount" style="font-size:12px; color:#767586; margin-left:auto;">0 PC dipilih</span>
                 </div>
 
+                <div style="display:flex; gap:8px; margin-bottom:12px; align-items:center; flex-wrap:wrap;">
+                    <div style="position:relative; flex:1; min-width:160px;">
+                        <span class="material-symbols-outlined" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); font-size:16px; color:#767586; pointer-events:none;">search</span>
+                        <input type="text" id="pcSearch" placeholder="Cari hostname atau IP..." oninput="applyPcFilters()"
+                               style="width:100%; padding:8px 12px 8px 34px; border:1px solid #c7c4d7; border-radius:8px; font-size:13px; color:#191c1e; background:#f7f9fb; box-sizing:border-box; outline:none;">
+                    </div>
+                    <select id="pcDeptFilter" onchange="applyPcFilters()"
+                            style="min-width:150px; padding:8px 12px; border:1px solid #c7c4d7; border-radius:8px; font-size:13px; color:#191c1e; background:#f7f9fb; box-sizing:border-box; outline:none;">
+                        <option value="">Semua Departemen</option>
+                    </select>
+                </div>
+
                 <div class="alert-info" style="margin-bottom:14px;">
                     <span class="material-symbols-outlined" style="font-size:16px; flex-shrink:0; margin-top:1px;">info</span>
                     <span>PC yang muncul di sini adalah yang sudah menjalankan agen <code>main.exe --daemon</code> dan berhasil terhubung ke server ini via WebSocket.</span>
@@ -413,7 +447,7 @@
             <div class="d-card-body" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
                 <button class="btn-primary" id="btnDeploy" onclick="startDeploy()" disabled>
                     <span class="material-symbols-outlined">rocket_launch</span>
-                    Deploy ke PC Terpilih
+                    Deploy
                 </button>
                 <div style="flex:1; font-size:12px; color:#767586;" id="deployReadyInfo">
                     Lengkapi konfigurasi dan pilih PC target untuk memulai.
@@ -605,14 +639,49 @@ async function refreshAgents() {
         const data = await res.json();
         agentList  = data.agents || [];
         renderPcGrid();
+        updateDeptFilter();
         updateAgentCount();
     } catch (e) {
         document.getElementById('agentCountText').textContent = 'Gagal terhubung';
     }
 }
 
+function getPcFilterState() {
+    const search = (document.getElementById('pcSearch').value || '').trim().toLowerCase();
+    const dept   = document.getElementById('pcDeptFilter').value || '';
+    return { search, dept };
+}
+
+function pcMatches(agent, { search, dept }) {
+    if (dept && (agent.department || '') !== dept) return false;
+    if (search) {
+        const haystack = `${agent.hostname} ${agent.ip}`.toLowerCase();
+        if (!haystack.includes(search)) return false;
+    }
+    return true;
+}
+
+function updateDeptFilter() {
+    const sel = document.getElementById('pcDeptFilter');
+    const current = sel.value;
+    const depts = new Set();
+    agentList.forEach(a => { if (a.department) depts.add(a.department); });
+    const options = Array.from(depts).sort().map(d => `<option value="${d}">${d}</option>`).join('');
+    sel.innerHTML = `<option value="">Semua Departemen</option>${options}`;
+    if (current && depts.has(current)) sel.value = current;
+}
+
+function applyPcFilters() {
+    renderPcGrid();
+    updateSelectedCount();
+    checkDeployReady();
+}
+
 function renderPcGrid() {
     const grid = document.getElementById('pcGrid');
+    const filter = getPcFilterState();
+    const visible = agentList.filter(a => pcMatches(a, filter));
+
     if (!agentList.length) {
         grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:24px 0; color:#767586; font-size:13px;">
             <span class="material-symbols-outlined" style="font-size:40px; display:block; margin-bottom:8px; color:#c7c4d7;">wifi_off</span>
@@ -622,13 +691,24 @@ function renderPcGrid() {
         return;
     }
 
-    grid.innerHTML = agentList.map(agent => {
+    if (!visible.length) {
+        grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:24px 0; color:#767586; font-size:13px;">
+            Tidak ada PC yang cocok dengan filter.<br>
+            <span style="font-size:11px;">Ubah kata kunci pencarian atau filter departemen.</span>
+        </div>`;
+        return;
+    }
+
+    grid.innerHTML = visible.map(agent => {
         const sel = selectedPCs.has(agent.hostname);
-        return `<div class="pc-card ${sel ? 'selected' : ''}" onclick="togglePC('${agent.hostname}')" id="pc-${agent.hostname}">
+        const dept = agent.department
+            ? `<div class="pc-dept" title="${agent.department}">${agent.department}</div>` : '';
+        return `<div class="pc-card ${sel ? 'selected' : ''}" onclick="togglePC('${agent.hostname}')" id="pc-${agent.hostname}" data-hostname="${agent.hostname}">
             <div class="pc-check">${sel ? '✓' : ''}</div>
             <div><span class="pc-status"></span><span style="font-size:10px; color:#22C55E; font-weight:600;">Online</span></div>
-            <div class="pc-hostname">${agent.hostname}</div>
-            <div class="pc-ip">${agent.ip}</div>
+            <div class="pc-hostname" title="${agent.hostname}">${agent.hostname}</div>
+            <div class="pc-ip" title="${agent.ip}">${agent.ip}</div>
+            ${dept}
         </div>`;
     }).join('');
 }
@@ -663,7 +743,11 @@ function togglePC(hostname) {
 }
 
 function selectAllPC() {
-    agentList.forEach(a => selectedPCs.add(a.hostname));
+    const filter = getPcFilterState();
+    const hasFilter = filter.search || filter.dept;
+    agentList.forEach(a => {
+        if (!hasFilter || pcMatches(a, filter)) selectedPCs.add(a.hostname);
+    });
     renderPcGrid();
     updateSelectedCount();
     checkDeployReady();

@@ -212,7 +212,8 @@ if(typeof devices !== 'undefined' && devices.length > 0) {
 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span> Aktif
 </span>
 </td>
-<td class="px-4 py-4 text-right flex justify-end gap-1">
+<td class="px-4 py-4 text-right">
+<div class="flex items-center justify-end gap-1">
 <button onclick="openModal('<%= device.filename %>', '<%= hostname %>', '<%= ipAddress %>', '<%= macAddress %>', '<%= osInfo %>', '<%= device.data['DAT'] || '' %>', '<%= device.data['Serial Number'] || '' %>', '<%= device.data['Departemen'] || '' %>', '<%= device.data['Pengguna'] || '' %>')" class="p-2 hover:bg-primary/10 hover:text-primary rounded transition-colors text-on-surface-variant" title="Edit">
 <span class="material-symbols-outlined text-sm">edit</span>
 </button>
@@ -222,6 +223,7 @@ if(typeof devices !== 'undefined' && devices.length > 0) {
 <a href="/asset/<%= device.filename %>" class="p-2 hover:bg-surface-container-high rounded transition-colors text-on-surface-variant" title="Detail">
 <span class="material-symbols-outlined text-sm">visibility</span>
 </a>
+</div>
 </td>
 </tr>
 <% }); } else { %>

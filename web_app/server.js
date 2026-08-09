@@ -1028,11 +1028,24 @@ function broadcastAgentList() {
 // API: Daftar Agen yang Sedang Online
 // =============================================
 app.get('/api/agents', requireAuth, (req, res) => {
-    const list = Array.from(agentClients.entries()).map(([hostname, info]) => ({
-        hostname,
-        ip: info.ip,
-        connectedAt: info.connectedAt
-    }));
+    const devices = getDevices();
+    const list = Array.from(agentClients.entries()).map(([hostname, info]) => {
+        let department = '';
+        const match = devices.find(d => {
+            const ui = d.data["User Session (Whoami)"] || {};
+            const card = (d.data["LAN/Network Card"] || [])[0] || {};
+            return ui.Hostname === hostname ||
+                   card["IPv4 Address"] === info.ip ||
+                   d.filename.replace('.json', '') === hostname;
+        });
+        if (match && match.data) department = match.data["Departemen"] || '';
+        return {
+            hostname,
+            ip: info.ip,
+            connectedAt: info.connectedAt,
+            department
+        };
+    });
     res.json({ agents: list, total: list.length });
 });
 

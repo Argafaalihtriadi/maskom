@@ -1,67 +1,67 @@
 {
     "User Session (Whoami)": {
-        "Username": "ADMIN NPB",
-        "Hostname": "DESKTOP-BF4KKSM",
-        "Full Identity": "DESKTOP-BF4KKSM\\ADMIN NPB"
+        "Username": "ZONA 12 ST1",
+        "Hostname": "DESKTOP-LDMKIMU",
+        "Full Identity": "DESKTOP-LDMKIMU\\ZONA 12 ST1"
     },
     "Sistem Operasi": "Windows 10 (64bit)",
     "CPU": {
-        "Name": "Core(TM) i3-10105 CPU",
+        "Name": "Pentium(R) CPU G4400",
         "Code Name": "Unknown",
-        "Package": "Socket 1200 LGA",
-        "Specification": "Intel(R) Core(TM) i3-10105 CPU @ 3.70GHz",
-        "Core Speed": "3696.0 MHz",
-        "Cores": 4,
-        "Threads": 8
+        "Package": "Socket 1151 LGA",
+        "Specification": "Intel(R) Pentium(R) CPU G4400 @ 3.30GHz",
+        "Core Speed": "3300.0 MHz",
+        "Cores": 2,
+        "Threads": 2
     },
     "Mainboard": {
-        "Motherboard Manufacturer": "PT Zyrexindo Mandiri Buana Tbk",
-        "Model": "Zyrex",
-        "Version": "1.00",
+        "Motherboard Manufacturer": "ASUSTeK COMPUTER INC.",
+        "Model": "H110M-C",
+        "Version": "Rev X.0x",
         "BIOS Vendor": "American Megatrends Inc.",
-        "BIOS Version": "9029",
-        "BIOS Date": "02/20/2024"
+        "BIOS Version": "4001",
+        "BIOS Date": "11/22/2018"
     },
     "Memory & SPD": {
         "General": {
             "Type": "DDR4",
-            "Total Size": "6.37 GB",
+            "Total Size": "3.87 GB",
             "Channel #": "Single",
-            "DRAM Frequency": "2667 MHz"
+            "DRAM Frequency": "2133 MHz"
         },
         "SPD (Detail per Slot)": [
             {
                 "Slot/Keping": "Slot #1",
-                "Ukuran (Size)": "8 GB",
-                "Merk/Manufaktur": "0x0000",
-                "Part Number": "",
-                "Max Bandwidth/Speed": "2667 MHz"
+                "Ukuran (Size)": "4 GB",
+                "Merk/Manufaktur": "SK Hynix",
+                "Part Number": "HMA851U6CJR6N-UH",
+                "Max Bandwidth/Speed": "2133 MHz"
             }
         ]
     },
     "Graphics": [
         {
-            "Name/Model": "Intel(R) UHD Graphics 630",
+            "Name/Model": "Intel(R) HD Graphics 510",
             "Dedicated VRAM": "1024 MB",
             "Driver Version": "31.0.101.2111"
         }
     ],
     "Penyimpanan": [
         {
-            "Model/Nama Drive": "ADATA LEGEND 850",
-            "Tipe Interfasi": "SSD NVMe (PCIe High Speed)",
-            "Koneksi Bus": "NVMe",
-            "Kapasitas": "476.94 GB",
-            "Estimasi Batas Speed": "Up to 3500 - 7500 MB/s"
+            "Model/Nama Drive": "V-GEN03HG25HS128HY",
+            "Tipe Interfasi": "SSD SATA",
+            "Koneksi Bus": "SATA",
+            "Kapasitas": "119.24 GB",
+            "Estimasi Batas Speed": "Up to 550 MB/s"
         }
     ],
     "LAN/Network Card": [
         {
-            "Description (Nama Perangkat)": "Intel(R) Ethernet Connection (14) I219-V",
-            "Merk/Manufaktur": "Intel",
+            "Description (Nama Perangkat)": "Realtek PCIe GbE Family Controller",
+            "Merk/Manufaktur": "Realtek",
             "Kategori Perangkat": "LAN / Ethernet Card (Kabel)",
             "Status Hardware": "Connected (Terhubung)",
-            "Physical Address (MAC)": "10:7C:61:4E:1A:D4",
+            "Physical Address (MAC)": "A8:5E:45:51:18:EF",
             "IPv4 Address": "192.168.33.60",
             "Subnet Mask": "255.255.255.0",
             "Default Gateway": "192.168.33.254",
